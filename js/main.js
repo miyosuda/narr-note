@@ -1,16 +1,16 @@
 // textノードのサイズを取得
 const getElementDimension = (text) => {
   const element = document.createElement('span')
-
+  
   // elementのsizeは子に依存
   element.style.display = 'inline-block'
-
+  
   element.style.visibility = 'hidden'
-
+  
   element.textContent = text
   
   document.body.append(element)
-
+  
   const dimensions = {}
   dimensions.width = element.offsetWidth
   dimensions.height = element.offsetHeight
@@ -49,37 +49,187 @@ const getStringLengthWithMin = (str, minSize=5) => {
 }
 
 
+const findEndOfMath = (delimiter, text, startIndex) => {
+  let index = startIndex
+  let braceLevel = 0
+
+  const delimLength = delimiter.length
+
+  while (index < text.length) {
+    const character = text[index]
+
+    if (braceLevel <= 0 &&
+        text.slice(index, index + delimLength) === delimiter) {
+      return index
+    } else if (character === "\\") {
+      index++
+    } else if (character === "{") {
+      braceLevel++
+    } else if (character === "}") {
+      braceLevel--
+    }
+
+    index++
+  }
+
+  return -1
+}
+
+
+const splitAtDelimiters = (startData, leftDelim, rightDelim, display) => {
+  const finalData = []
+
+  for(let i = 0; i < startData.length; i++) {
+    if (startData[i].type === "text") {
+      const text = startData[i].data
+
+      let lookingForLeft = true
+      let currIndex = 0
+      let nextIndex
+
+      nextIndex = text.indexOf(leftDelim)
+      if (nextIndex !== -1) {
+        currIndex = nextIndex
+        finalData.push({
+          type: "text",
+          data: text.slice(0, currIndex),
+        })
+        lookingForLeft = false
+      }
+
+      while (true) {
+        if (lookingForLeft) {
+          nextIndex = text.indexOf(leftDelim, currIndex)
+          if (nextIndex === -1) {
+            break
+          }
+
+          finalData.push({
+            type: "text",
+            data: text.slice(currIndex, nextIndex),
+          })
+
+          currIndex = nextIndex
+        } else {
+          nextIndex = findEndOfMath(
+            rightDelim,
+            text,
+            currIndex + leftDelim.length)
+          if (nextIndex === -1) {
+            break
+          }
+
+          finalData.push({
+            type: "math",
+            data: text.slice(
+              currIndex + leftDelim.length,
+              nextIndex),
+            rawData: text.slice(
+              currIndex,
+              nextIndex + rightDelim.length),
+            display: display,
+          })
+
+          currIndex = nextIndex + rightDelim.length
+        }
+
+        lookingForLeft = !lookingForLeft
+      }
+
+      finalData.push({
+        type: "text",
+        data: text.slice(currIndex),
+      })
+    } else {
+      finalData.push(startData[i])
+    }
+  }
+
+  return finalData
+}
+
+
+const splitWithDelimiters = (text, delimiters) => {
+  let data = [{type: "text", data: text}]
+  for(let i = 0; i < delimiters.length; i++) {
+    const delimiter = delimiters[i]
+    data = splitAtDelimiters(
+      data, delimiter.left, delimiter.right,
+      delimiter.display || false)
+  }
+  return data
+}
+
+
+const render = (text, element) => {
+  const options = {
+    throwOnError: true,
+    delimiters: [
+	  {left: "$$", right: "$$", display: true},
+      {left: "$", right: "$", display: false}
+	]
+  }
+  
+  const data = splitWithDelimiters(text, options.delimiters)
+  
+  for(let i=0; i<data.length; ++i) {
+    if( data[i].type === "text" && data[i].data != '' ) {
+      let span = document.createElement('span')
+      span.textContent = data[i].data
+      element.appendChild(span)
+    } else if( data[i].type === "math" ) {
+      let span = document.createElement('span')
+
+      try {
+        katex.render(data[i].data, span, {
+          throwOnError:true
+        })
+	  } catch (e) {
+        if (!(e instanceof katex.ParseError)) {
+          throw e;
+        }
+        const errorStr = "KaTeX : Failed to parse `" + data[i].data + "` with " + e
+        console.log(errorStr)
+        continue
+      }
+      element.appendChild(span)
+    }
+  }
+}
+
+
 class Node {
   constructor(mindMap, id, x, y, text) {
-    const dims = getElementDimension(text)
-
-    let span = document.createElement('span')
-    span.textContent = text
-
-    this.span = span
-
+    this.editing = false
+    
+    this.text = text
     let ns = 'http://www.w3.org/2000/svg'
     let foreignObject = document.createElementNS(ns, 'foreignObject')
     foreignObject.id = 'node' + id
-
+    
     foreignObject.x.baseVal.value = x
     foreignObject.y.baseVal.value = y
-
+    
+    /*
+    //const dims = getElementDimension(text)
     foreignObject.width.baseVal.value = dims.width
     foreignObject.height.baseVal.value = dims.height
-
+    */
+    
+    foreignObject.width.baseVal.value = 100
+    foreignObject.height.baseVal.value = 100
+    
     let g = document.getElementById('nodes')
     g.appendChild(foreignObject)
-    foreignObject.appendChild(span)
     
     this.foreignObject = foreignObject
-
-    let self = this    
-
-    foreignObject.addEventListener('mousedown', function(e) {
+    
+    let self = this
+    
+    this.foreignObject.addEventListener('mousedown', function(e) {
       if( !self.isEditing() ) {
         // イベント伝搬の停止 (これがあれば、cavasの方にmousedownが伝わらないので、
-        // backgroundのdragを別途区別できる)
+        // backgroundのdragなどを別途区別できる)
         e.stopPropagation()
         // イベントキャンセル
         e.preventDefault()
@@ -88,14 +238,16 @@ class Node {
         self.startClientY = e.clientY
         self.startElementX = self.foreignObject.x.baseVal.value
         self.startElementY = self.foreignObject.y.baseVal.value
-
+        
         noteManager.onNodeDragStart(self)
       }
     })
     
-    foreignObject.addEventListener('dblclick', function(e) {
+    this.foreignObject.addEventListener('dblclick', function(e) {
       self.onDoubleClicked()
     })
+    
+    render(this.text, this.foreignObject)
   }
 
   onDrag(e) {
@@ -106,57 +258,76 @@ class Node {
   }
 
   onDoubleClicked() {
-    const text = this.span.textContent
-    
-    this.span.remove()
-    this.span = null
+    // 子を全て削除
+    while(this.foreignObject.firstChild) {
+      this.foreignObject.removeChild(this.foreignObject.firstChild)
+    }
 
     let textInput = document.createElement('input')
     
     textInput.setAttribute("type", "text")
-    let stringSize = getStringLengthWithMin(text)
+    let stringSize = getStringLengthWithMin(this.text)
     textInput.setAttribute("size", stringSize)
-    textInput.setAttribute("value", text)
+    textInput.setAttribute("value", this.text)
     
     textInput.addEventListener('input', () => {
       this.onTextInput(textInput.value)
     })
-    
+
     textInput.addEventListener('change', () => {
       this.onTextChange(textInput.value)
     })
 
+    textInput.addEventListener('blur', (event) => {
+      this.onTextChange(textInput.value)
+    })
+    
     this.foreignObject.appendChild(textInput)
-
+    
     this.textInput = textInput
-
+    
+    this.textInput.focus()
+    
     this.foreignObject.width.baseVal.value = this.textInput.offsetWidth + 3
     this.foreignObject.height.baseVal.value = this.textInput.offsetHeight + 10
+    
+    this.editing = true
   }
 
   onTextInput(value) {
     // テキストが変化した
     let stringSize = getStringLengthWithMin(value)
     this.textInput.setAttribute("size", stringSize)
-
+    
     // foreignObjectのサイズも変える
     this.foreignObject.width.baseVal.value = this.textInput.offsetWidth + 3
     this.foreignObject.height.baseVal.value = this.textInput.offsetHeight + 10
   }
-
+  
   onTextChange(value) {
     // テキスト入力が完了した
-    let span = document.createElement('span')
-    span.textContent = value
-    this.span = span
-    
-    this.foreignObject.appendChild(span)
+    this.text = value
+    this.editing = false
 
-    this.textInput.remove()
+    if( this.textInput != null ) {
+      const tmpTextInput = this.textInput
+      this.textInput = null
+      tmpTextInput.remove() // ここで再度onTextChangeが呼ばれる
+
+      render(this.text, this.foreignObject)
+    }
   }
 
   isEditing() {
-    return this.span == null
+    return this.editing
+  }
+
+  x() {
+    return this.foreignObject.x.baseVal.value
+  }
+
+  y() {
+    return this.foreignObject.y.baseVal.value
   }
 }
 
@@ -165,12 +336,6 @@ class NoteManager {
   constructor() {
     this.isMouseDown = false
     this.target = null
-    this.startClientX = 0
-    this.startClientY = 0
-    this.startElementX = 0
-    this.startElementY = 0
-    this.canvasX = 0
-    this.canvasY = 0
     this.nextNodeId = 0
   }
 
@@ -178,16 +343,30 @@ class NoteManager {
     document.onmouseup = event => this.onMouseUp(event)
     document.onmousemove = event => this.onMouseMove(event)
 
-    let svg = document.getElementById('svg')
-    svg.addEventListener('mousedown', event => this.onSVGMouseDown(event))
-    
     document.body.addEventListener('keydown', event => this.onKeyDown(event))
+
+    this.lastNode = null
   }
 
-  addNode(x, y) {
-    const text = 'node'
+  addNode(asSibling) {
+    let x = 10
+    let y = 10
+
+    if(this.lastNode != null) {
+      if(asSibling) {
+        x = this.lastNode.x() + 100
+        y = this.lastNode.y()
+      } else {
+        x = this.lastNode.x()
+        y = this.lastNode.y() + 50
+      }
+    }
+    
+    const text = "今日は$c = \\frac{a}{b}$である"
     let node = new Node(this, this.nextNodeId, x, y, text)
     this.nextNodeId += 1
+
+    this.lastNode = node
   }
 
   onKeyDown(e) {
@@ -213,34 +392,16 @@ class NoteManager {
     if(this.isMouseDown == true) {
       if(this.target != null) {
         this.target.onDrag(e)
-      } else {
-        let canvas = document.getElementById('canvas')
-        
-        const dx = e.clientX - this.startClientX
-        const dy = e.clientY - this.startClientY
-        this.canvasX = this.startElementX + dx
-        this.canvasY = this.startElementY + dy
-
-        canvas.setAttribute('transform',
-                            'translate(' + this.canvasX + ',' + this.canvasY + ')')
       }
     }
   }
 
-  onSVGMouseDown(e) {
-    this.isMouseDown = true
-    this.startClientX = e.clientX
-    this.startClientY = e.clientY
-    this.startElementX = this.canvasX
-    this.startElementY = this.canvasY
-  }
-
   onTabKeyDown() {
-    this.addNode(10, 10)
+    this.addNode(true)
   }
 
   onEnterKeyDown() {
-    this.addNode(100, 100)
+    this.addNode(false)
   }
 
   onNodeDragStart(node) {
