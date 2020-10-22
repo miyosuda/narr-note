@@ -1,5 +1,5 @@
 // textノードのサイズを取得
-const getElementDimension = (text) => {
+const getElementDimension = (html) => {
   const element = document.createElement('span')
   
   // elementのsizeは子に依存
@@ -7,7 +7,7 @@ const getElementDimension = (text) => {
   
   element.style.visibility = 'hidden'
   
-  element.textContent = text
+  element.innerHTML = html
   
   document.body.append(element)
   
@@ -178,11 +178,18 @@ const render = (text, element) => {
       span.textContent = data[i].data
       element.appendChild(span)
     } else if( data[i].type === "math" ) {
-      let span = document.createElement('span')
-
+      let mathElement = null
+      
+      if(data[i].display) {
+        mathElement = document.createElement('div')
+      } else {
+        mathElement = document.createElement('span')
+      }
+      
       try {
-        katex.render(data[i].data, span, {
-          throwOnError:true
+        katex.render(data[i].data, mathElement, {
+          displayMode : data[i].display,
+          throwOnError : true
         })
 	  } catch (e) {
         if (!(e instanceof katex.ParseError)) {
@@ -192,7 +199,7 @@ const render = (text, element) => {
         console.log(errorStr)
         continue
       }
-      element.appendChild(span)
+      element.appendChild(mathElement)
     }
   }
 }
@@ -209,15 +216,6 @@ class Node {
     
     foreignObject.x.baseVal.value = x
     foreignObject.y.baseVal.value = y
-    
-    /*
-    //const dims = getElementDimension(text)
-    foreignObject.width.baseVal.value = dims.width
-    foreignObject.height.baseVal.value = dims.height
-    */
-    
-    foreignObject.width.baseVal.value = 100
-    foreignObject.height.baseVal.value = 100
     
     let g = document.getElementById('nodes')
     g.appendChild(foreignObject)
@@ -248,6 +246,12 @@ class Node {
     })
     
     render(this.text, this.foreignObject)
+
+    const dims = getElementDimension(this.foreignObject.innerHTML)
+    console.log(dims) //..
+    
+    this.foreignObject.width.baseVal.value = dims.width
+    this.foreignObject.height.baseVal.value = dims.height
   }
 
   onDrag(e) {
@@ -315,6 +319,12 @@ class Node {
       tmpTextInput.remove() // ここで再度onTextChangeが呼ばれる
 
       render(this.text, this.foreignObject)
+
+      const dims = getElementDimension(this.foreignObject.innerHTML)
+      console.log(dims) //..
+      
+      this.foreignObject.width.baseVal.value = dims.width
+      this.foreignObject.height.baseVal.value = dims.height
     }
   }
 
