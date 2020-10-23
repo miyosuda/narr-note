@@ -197,6 +197,9 @@ const render = (text, element) => {
         }
         const errorStr = "KaTeX : Failed to parse `" + data[i].data + "` with " + e
         console.log(errorStr)
+        let errorSpan = document.createElement('span')
+        errorSpan.textContent = "error"
+        element.appendChild(errorSpan)
         continue
       }
       element.appendChild(mathElement)
@@ -244,24 +247,23 @@ class Node {
     this.foreignObject.addEventListener('dblclick', function(e) {
       self.onDoubleClicked()
     })
-    
+
+    if(this.text != null) {
+      this.prepare()
+    } else {
+      this.prepareInput()
+    }
+  }
+
+  prepare() {
     render(this.text, this.foreignObject)
 
     const dims = getElementDimension(this.foreignObject.innerHTML)
-    console.log(dims) //..
-    
     this.foreignObject.width.baseVal.value = dims.width
     this.foreignObject.height.baseVal.value = dims.height
   }
 
-  onDrag(e) {
-    const dx = e.clientX - this.startClientX
-    const dy = e.clientY - this.startClientY
-    this.foreignObject.x.baseVal.value = this.startElementX + dx
-    this.foreignObject.y.baseVal.value = this.startElementY + dy
-  }
-
-  onDoubleClicked() {
+  prepareInput() {
     // 子を全て削除
     while(this.foreignObject.firstChild) {
       this.foreignObject.removeChild(this.foreignObject.firstChild)
@@ -272,7 +274,14 @@ class Node {
     textInput.setAttribute("type", "text")
     let stringSize = getStringLengthWithMin(this.text)
     textInput.setAttribute("size", stringSize)
-    textInput.setAttribute("value", this.text)
+
+    let inputText = this.text
+    if( inputText == null ) {
+      inputText = ""
+    }
+
+    this.textChanged = false
+    textInput.setAttribute("value", inputText)
     
     textInput.addEventListener('input', () => {
       this.onTextInput(textInput.value)
@@ -285,7 +294,18 @@ class Node {
     textInput.addEventListener('blur', (event) => {
       this.onTextChange(textInput.value)
     })
-    
+
+    textInput.addEventListener('keydown', (event) => {
+      const key = event.keyCode || event.charCode || 0;
+      if(key == 13) {
+        console.log("return pressed")
+        // enterキーが押されたが入力が変更されていなかった場合
+        if(!this.textChanged) {
+          this.onTextChange(textInput.value)
+        }
+      }
+    })
+
     this.foreignObject.appendChild(textInput)
     
     this.textInput = textInput
@@ -298,7 +318,20 @@ class Node {
     this.editing = true
   }
 
+  onDrag(e) {
+    const dx = e.clientX - this.startClientX
+    const dy = e.clientY - this.startClientY
+    this.foreignObject.x.baseVal.value = this.startElementX + dx
+    this.foreignObject.y.baseVal.value = this.startElementY + dy
+  }
+
+  onDoubleClicked() {
+    this.prepareInput()
+  }
+
   onTextInput(value) {
+    this.textChanged = true
+    
     // テキストが変化した
     let stringSize = getStringLengthWithMin(value)
     this.textInput.setAttribute("size", stringSize)
@@ -317,14 +350,7 @@ class Node {
       const tmpTextInput = this.textInput
       this.textInput = null
       tmpTextInput.remove() // ここで再度onTextChangeが呼ばれる
-
-      render(this.text, this.foreignObject)
-
-      const dims = getElementDimension(this.foreignObject.innerHTML)
-      console.log(dims) //..
-      
-      this.foreignObject.width.baseVal.value = dims.width
-      this.foreignObject.height.baseVal.value = dims.height
+      this.prepare()
     }
   }
 
@@ -338,6 +364,10 @@ class Node {
 
   y() {
     return this.foreignObject.y.baseVal.value
+  }
+
+  remove() {
+    this.foreignObject.remove()
   }
 }
 
@@ -356,6 +386,7 @@ class NoteManager {
     document.body.addEventListener('keydown', event => this.onKeyDown(event))
 
     this.lastNode = null
+    this.currentNode = null
   }
 
   addNode(asSibling) {
@@ -372,11 +403,19 @@ class NoteManager {
       }
     }
     
-    const text = "今日は$c = \\frac{a}{b}$である"
+    //const text = "今日は$c = \\frac{a}{b}$である"
+    const text = null
     let node = new Node(this, this.nextNodeId, x, y, text)
     this.nextNodeId += 1
 
     this.lastNode = node
+  }
+
+  deleteCurrentNode() {
+    if( this.currentNode != null ) {
+      this.currentNode.remove()
+      this.currentNode = null
+    }
   }
 
   onKeyDown(e) {
@@ -386,10 +425,12 @@ class NoteManager {
     }
 
     if(e.key === 'Tab' ) {
-      this.onTabKeyDown()
+      this.addNode(true)
       e.preventDefault()
     } else if(e.key === 'Enter' ) {
-      this.onEnterKeyDown()
+      this.addNode(false)
+    } else if(e.key === 'Backspace' ) {
+      this.deleteCurrentNode()
     }
   }
 
@@ -406,17 +447,10 @@ class NoteManager {
     }
   }
 
-  onTabKeyDown() {
-    this.addNode(true)
-  }
-
-  onEnterKeyDown() {
-    this.addNode(false)
-  }
-
   onNodeDragStart(node) {
     this.target = node
     this.isMouseDown = true
+    this.currentNode = node
   }
 }
 
