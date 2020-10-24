@@ -1,0 +1,4 @@
+/* getElementDimension()でのサイズが2回目以降で異なる場合の為のworkaround */
+foreignObject {
+  overflow: visible;
+}

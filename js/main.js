@@ -1,6 +1,7 @@
 // textノードのサイズを取得
 const getElementDimension = (html) => {
   const element = document.createElement('span')
+  //const element = document.createElement('div')
   
   // elementのsizeは子に依存
   element.style.display = 'inline-block'
@@ -12,8 +13,8 @@ const getElementDimension = (html) => {
   document.body.append(element)
   
   const dimensions = {}
-  dimensions.width = element.offsetWidth
-  dimensions.height = element.offsetHeight
+  dimensions.width = element.getBoundingClientRect().width
+  dimensions.height = element.getBoundingClientRect().height
 
   element.remove()
   return dimensions
@@ -261,6 +262,11 @@ class Node {
     const dims = getElementDimension(this.foreignObject.innerHTML)
     this.foreignObject.width.baseVal.value = dims.width
     this.foreignObject.height.baseVal.value = dims.height
+
+    //..
+    this.foreignObject.setAttribute("width", dims.width)
+    this.foreignObject.setAttribute("height", dims.height)
+    //..
   }
 
   prepareInput() {
