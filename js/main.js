@@ -1,7 +1,6 @@
 // textノードのサイズを取得
 const getElementDimension = (html) => {
   const element = document.createElement('span')
-  //const element = document.createElement('div')
   
   // elementのsizeは子に依存
   element.style.display = 'inline-block'
@@ -226,34 +225,19 @@ class Node {
     
     this.foreignObject = foreignObject
     
-    let self = this
-    
-    this.foreignObject.addEventListener('mousedown', function(e) {
-      if( !self.isEditing() ) {
-        // イベント伝搬の停止 (これがあれば、cavasの方にmousedownが伝わらないので、
-        // backgroundのdragなどを別途区別できる)
-        e.stopPropagation()
-        // イベントキャンセル
-        e.preventDefault()
-        
-        self.startClientX = e.clientX
-        self.startClientY = e.clientY
-        self.startElementX = self.foreignObject.x.baseVal.value
-        self.startElementY = self.foreignObject.y.baseVal.value
-        
-        noteManager.onNodeDragStart(self)
-      }
-    })
-    
-    this.foreignObject.addEventListener('dblclick', function(e) {
-      self.onDoubleClicked()
-    })
-
     if(this.text != null) {
       this.prepare()
     } else {
       this.prepareInput()
     }
+  }
+
+  containsPos(x, y) {
+    const left   = this.foreignObject.x.baseVal.value
+    const top    = this.foreignObject.y.baseVal.value
+    const width  = this.foreignObject.width.baseVal.value
+    const height = this.foreignObject.height.baseVal.value
+    return (x >= left) && (x <= left+width) + (y >= top) && (y <= top+height)
   }
 
   prepare() {
@@ -262,11 +246,6 @@ class Node {
     const dims = getElementDimension(this.foreignObject.innerHTML)
     this.foreignObject.width.baseVal.value = dims.width
     this.foreignObject.height.baseVal.value = dims.height
-
-    //..
-    this.foreignObject.setAttribute("width", dims.width)
-    this.foreignObject.setAttribute("height", dims.height)
-    //..
   }
 
   prepareInput() {
@@ -324,15 +303,14 @@ class Node {
     this.editing = true
   }
 
-  onDrag(e) {
-    const dx = e.clientX - this.startClientX
-    const dy = e.clientY - this.startClientY
-    this.foreignObject.x.baseVal.value = this.startElementX + dx
-    this.foreignObject.y.baseVal.value = this.startElementY + dy
+  onDragStart() {
+    this.startElementX = this.foreignObject.x.baseVal.value
+    this.startElementY = this.foreignObject.y.baseVal.value
   }
 
-  onDoubleClicked() {
-    this.prepareInput()
+  onDrag(dx, dy) {
+    this.foreignObject.x.baseVal.value = this.startElementX + dx
+    this.foreignObject.y.baseVal.value = this.startElementY + dy
   }
 
   onTextInput(value) {
@@ -381,16 +359,21 @@ class Node {
 class NoteManager {
   constructor() {
     this.isMouseDown = false
+    this.startClientX = 0
+    this.startClientY = 0
     this.target = null
     this.nextNodeId = 0
+    this.nodes = []
   }
 
   prepare() {
-    document.onmouseup = event => this.onMouseUp(event)
+    document.onmousedown = event => this.onMouseDown(event)
+    document.onmouseup   = event => this.onMouseUp(event)
     document.onmousemove = event => this.onMouseMove(event)
 
-    document.body.addEventListener('keydown', event => this.onKeyDown(event))
-
+    document.body.addEventListener('keydown',  event => this.onKeyDown(event))
+    document.body.addEventListener('dblclick', evenet => this.onDoubleClick(event))
+    
     this.lastNode = null
     this.currentNode = null
   }
@@ -409,16 +392,21 @@ class NoteManager {
       }
     }
     
-    //const text = "今日は$c = \\frac{a}{b}$である"
     const text = null
     let node = new Node(this, this.nextNodeId, x, y, text)
     this.nextNodeId += 1
 
     this.lastNode = node
+
+    this.nodes.push(node)
   }
 
   deleteCurrentNode() {
     if( this.currentNode != null ) {
+      const nodeIndex = this.nodes.indexOf(this.currentNode)
+      if(nodeIndex >= 0) {
+        this.nodes.splice(nodeIndex, 1)
+      }
       this.currentNode.remove()
       this.currentNode = null
     }
@@ -440,6 +428,25 @@ class NoteManager {
     }
   }
 
+  onMouseDown(e) {
+    const x = e.clientX
+    const y = e.clientY
+
+    this.nodes.forEach(node => {
+      if( node.containsPos(x, y) ) {
+        // TODO:
+        this.target = node
+        this.isMouseDown = true
+        this.currentNode = node
+        
+        this.startClientX = x
+        this.startClientY = y
+        
+        node.onDragStart()
+      }
+    })
+  }
+
   onMouseUp(e) {
     this.isMouseDown = false
     this.target = null
@@ -448,15 +455,26 @@ class NoteManager {
   onMouseMove(e) {
     if(this.isMouseDown == true) {
       if(this.target != null) {
-        this.target.onDrag(e)
+        // TODO:
+        const x = e.clientX
+        const y = e.clientY
+        const dx = e.clientX - this.startClientX
+        const dy = e.clientY - this.startClientY
+        this.target.onDrag(dx, dy)
       }
     }
   }
 
-  onNodeDragStart(node) {
-    this.target = node
-    this.isMouseDown = true
-    this.currentNode = node
+  onDoubleClick(e) {
+    const x = e.clientX
+    const y = e.clientY
+    
+    this.nodes.forEach(node => {
+      // TODO:
+      if( node.containsPos(x, y) ) {
+        node.prepareInput()
+      }
+    })
   }
 }
 
