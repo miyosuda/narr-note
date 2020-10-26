@@ -175,6 +175,8 @@ const render = (text, element) => {
   for(let i=0; i<data.length; ++i) {
     if( data[i].type === "text" && data[i].data != '' ) {
       let span = document.createElement('span')
+      // テキスト選択無効のクラスを指定
+      span.className = 'disable-select';
       span.textContent = data[i].data
       element.appendChild(span)
     } else if( data[i].type === "math" ) {
@@ -185,6 +187,7 @@ const render = (text, element) => {
       } else {
         mathElement = document.createElement('span')
       }
+      mathElement.className = 'disable-select';
       
       try {
         katex.render(data[i].data, mathElement, {
@@ -237,7 +240,7 @@ class Node {
     const top    = this.foreignObject.y.baseVal.value
     const width  = this.foreignObject.width.baseVal.value
     const height = this.foreignObject.height.baseVal.value
-    return (x >= left) && (x <= left+width) + (y >= top) && (y <= top+height)
+    return (x >= left) && (x <= left+width) && (y >= top) && (y <= top+height)
   }
 
   prepare() {
@@ -361,7 +364,7 @@ class NoteManager {
     this.isMouseDown = false
     this.startClientX = 0
     this.startClientY = 0
-    this.target = null
+    this.selctedNodes = []
     this.nextNodeId = 0
     this.nodes = []
   }
@@ -402,14 +405,14 @@ class NoteManager {
   }
 
   deleteCurrentNode() {
-    if( this.currentNode != null ) {
+    this.selectedNodes.forEach(node => {
       const nodeIndex = this.nodes.indexOf(this.currentNode)
       if(nodeIndex >= 0) {
         this.nodes.splice(nodeIndex, 1)
       }
-      this.currentNode.remove()
-      this.currentNode = null
-    }
+      node.remove()
+    })
+    this.seletedNodes = []
   }
 
   onKeyDown(e) {
@@ -432,13 +435,14 @@ class NoteManager {
     const x = e.clientX
     const y = e.clientY
 
+    this.selectedNodes = []
+
     this.nodes.forEach(node => {
       if( node.containsPos(x, y) ) {
-        // TODO:
-        this.target = node
-        this.isMouseDown = true
-        this.currentNode = node
+        console.log("conatins pos") //..
         
+        this.selectedNodes.push(node)
+        this.isMouseDown = true
         this.startClientX = x
         this.startClientY = y
         
@@ -449,19 +453,19 @@ class NoteManager {
 
   onMouseUp(e) {
     this.isMouseDown = false
-    this.target = null
+    this.selectedNodes = []
   }
 
   onMouseMove(e) {
     if(this.isMouseDown == true) {
-      if(this.target != null) {
-        // TODO:
-        const x = e.clientX
-        const y = e.clientY
-        const dx = e.clientX - this.startClientX
-        const dy = e.clientY - this.startClientY
-        this.target.onDrag(dx, dy)
-      }
+      const dx = e.clientX - this.startClientX
+      const dy = e.clientY - this.startClientY
+      //const x = e.clientX
+      //const y = e.clientY      
+
+      this.selectedNodes.forEach(node => {
+        node.onDrag(dx, dy)
+      })
     }
   }
 
