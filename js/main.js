@@ -208,12 +208,89 @@ const render = (text, element) => {
   }
 }
 
+class TextInput {
+  constructor(noteManager) {
+    this.noteManager = noteManager
+    this.foreignObject = document.getElementById('textInputObj')
+    
+    let input = document.getElementById('textInput')
+    //input.setAttribute("type", "text")
+    this.textChanged = false
+
+    input.addEventListener('input', () => {
+      this.onTextInput(input.value)
+    })
+
+    input.addEventListener('change', () => {
+      this.onTextChange(input.value)
+    })
+
+    input.addEventListener('blur', (event) => {
+      this.onTextChange(input.value)
+    })
+
+    input.addEventListener('keydown', (event) => {
+      const key = event.keyCode || event.charCode || 0;
+      if(key == 13) {
+        // enterキーが押されたが入力が変更されていなかった場合
+        if(!this.textChanged) {
+          this.onTextChange(input.value)
+        }
+      }
+    })
+
+    this.input = input
+    
+    this.hide()
+  }
+
+  show(x, y, text) {
+    let text_ = ""
+    if( text != null ) {
+      text_ = text
+    }
+    
+    let stringSize = getStringLengthWithMin(text_)
+    this.input.setAttribute("size", stringSize)
+    this.input.value = text_
+
+    this.foreignObject.x.baseVal.value = x
+    this.foreignObject.y.baseVal.value = y
+    this.foreignObject.width.baseVal.value = this.input.offsetWidth + 3
+    this.foreignObject.height.baseVal.value = this.input.offsetHeight + 10
+    this.foreignObject.style.display = 'block' // TODO: blockで良いかどうか確認
+
+    this.input.focus()
+  }
+
+  hide() {
+    this.foreignObject.style.display = 'none'
+  }
+
+  onTextInput(value) {
+    this.textChanged = true
+    
+    // テキストが変化した
+    let stringSize = getStringLengthWithMin(value)
+    this.input.setAttribute("size", stringSize)
+    
+    // foreignObjectのサイズも変える
+    this.foreignObject.width.baseVal.value = this.input.offsetWidth + 3
+    this.foreignObject.height.baseVal.value = this.input.offsetHeight + 10
+  }
+  
+  onTextChange(value) {
+    // テキスト入力が完了した    
+    noteManager.onTextDecided(value)
+    this.hide()
+  }
+}
+
 
 class Node {
   constructor(x, y, text) {
-    this.editing = false
-    
     this.text = text
+    
     let ns = 'http://www.w3.org/2000/svg'
     let foreignObject = document.createElementNS(ns, 'foreignObject')
     foreignObject.x.baseVal.value = x
@@ -224,11 +301,7 @@ class Node {
     
     this.foreignObject = foreignObject
     
-    if(this.text != null) {
-      this.prepare()
-    } else {
-      this.prepareInput()
-    }
+    this.prepare()
   }
 
   containsPos(x, y) {
@@ -248,60 +321,6 @@ class Node {
     this.foreignObject.height.baseVal.value = dims.height
   }
 
-  prepareInput() {
-    // 子を全て削除
-    while(this.foreignObject.firstChild) {
-      this.foreignObject.removeChild(this.foreignObject.firstChild)
-    }
-
-    let textInput = document.createElement('input')
-    
-    textInput.setAttribute("type", "text")
-    let stringSize = getStringLengthWithMin(this.text)
-    textInput.setAttribute("size", stringSize)
-
-    let inputText = this.text
-    if( inputText == null ) {
-      inputText = ""
-    }
-
-    this.textChanged = false
-    textInput.setAttribute("value", inputText)
-    
-    textInput.addEventListener('input', () => {
-      this.onTextInput(textInput.value)
-    })
-
-    textInput.addEventListener('change', () => {
-      this.onTextChange(textInput.value)
-    })
-
-    textInput.addEventListener('blur', (event) => {
-      this.onTextChange(textInput.value)
-    })
-
-    textInput.addEventListener('keydown', (event) => {
-      const key = event.keyCode || event.charCode || 0;
-      if(key == 13) {
-        // enterキーが押されたが入力が変更されていなかった場合
-        if(!this.textChanged) {
-          this.onTextChange(textInput.value)
-        }
-      }
-    })
-
-    this.foreignObject.appendChild(textInput)
-    
-    this.textInput = textInput
-    
-    this.textInput.focus()
-    
-    this.foreignObject.width.baseVal.value = this.textInput.offsetWidth + 3
-    this.foreignObject.height.baseVal.value = this.textInput.offsetHeight + 10
-    
-    this.editing = true
-  }
-
   onDragStart() {
     this.startElementX = this.foreignObject.x.baseVal.value
     this.startElementY = this.foreignObject.y.baseVal.value
@@ -311,36 +330,7 @@ class Node {
     this.foreignObject.x.baseVal.value = this.startElementX + dx
     this.foreignObject.y.baseVal.value = this.startElementY + dy
   }
-
-  onTextInput(value) {
-    this.textChanged = true
-    
-    // テキストが変化した
-    let stringSize = getStringLengthWithMin(value)
-    this.textInput.setAttribute("size", stringSize)
-    
-    // foreignObjectのサイズも変える
-    this.foreignObject.width.baseVal.value = this.textInput.offsetWidth + 3
-    this.foreignObject.height.baseVal.value = this.textInput.offsetHeight + 10
-  }
   
-  onTextChange(value) {
-    // テキスト入力が完了した
-    this.text = value
-    this.editing = false
-
-    if( this.textInput != null ) {
-      const tmpTextInput = this.textInput
-      this.textInput = null
-      tmpTextInput.remove() // ここで再度onTextChangeが呼ばれる
-      this.prepare()
-    }
-  }
-
-  isEditing() {
-    return this.editing
-  }
-
   x() {
     return this.foreignObject.x.baseVal.value
   }
@@ -373,8 +363,11 @@ class NoteManager {
 
     this.lastNode = null
     this.currentNode = null
+
+    this.textInput = new TextInput()
   }
 
+  /*
   addNode(asSibling) {
     let x = 10
     let y = 10
@@ -394,6 +387,24 @@ class NoteManager {
     this.lastNode = node
 
     this.nodes.push(node)
+  }
+  */
+
+  showInput(asSibling) {
+    let x = 10
+    let y = 10
+
+    if(this.lastNode != null) {
+      if(asSibling) {
+        x = this.lastNode.x() + 100
+        y = this.lastNode.y()
+      } else {
+        x = this.lastNode.x()
+        y = this.lastNode.y() + 50
+      }
+    }
+
+    this.textInput.show(x, y, null)
   }
 
   deleteCurrentNode() {
@@ -426,10 +437,10 @@ class NoteManager {
     }
 
     if(e.key === 'Tab' ) {
-      this.addNode(true)
+      this.showInput(true)
       e.preventDefault()
     } else if(e.key === 'Enter' ) {
-      this.addNode(false)
+      this.showInput(false)
     } else if(e.key === 'Backspace' ) {
       this.deleteCurrentNode()
     }
@@ -481,9 +492,19 @@ class NoteManager {
     // TODO: 最初に見つけたものに限定
     this.nodes.forEach(node => {
       if( node.containsPos(x, y) ) {
-        node.prepareInput()
+        // TODO:
+        //node.prepareInput()
       }
     })
+  }
+
+  onTextDecided(text) {
+    // TODO: 場所を指定する
+    let x = 10
+    let y = 10
+    let node = new Node(x, y, text)
+    this.lastNode = node
+    this.nodes.push(node)
   }
 }
 
