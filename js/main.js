@@ -210,14 +210,12 @@ const render = (text, element) => {
 
 
 class Node {
-  constructor(mindMap, id, x, y, text) {
+  constructor(x, y, text) {
     this.editing = false
     
     this.text = text
     let ns = 'http://www.w3.org/2000/svg'
     let foreignObject = document.createElementNS(ns, 'foreignObject')
-    foreignObject.id = 'node' + id
-    
     foreignObject.x.baseVal.value = x
     foreignObject.y.baseVal.value = y
     
@@ -360,10 +358,9 @@ class Node {
 class NoteManager {
   constructor() {
     this.isMouseDown = false
-    this.startClientX = 0
-    this.startClientY = 0
+    this.dragStartX = 0
+    this.dragStartY = 0
     this.selctedNodes = []
-    this.nextNodeId = 0
     this.nodes = []
   }
 
@@ -393,9 +390,7 @@ class NoteManager {
     }
     
     const text = null
-    let node = new Node(this, this.nextNodeId, x, y, text)
-    this.nextNodeId += 1
-
+    let node = new Node(x, y, text)
     this.lastNode = node
 
     this.nodes.push(node)
@@ -451,8 +446,8 @@ class NoteManager {
       if( node.containsPos(x, y) ) {
         this.selectedNodes.push(node)
         this.isMouseDown = true
-        this.startClientX = x
-        this.startClientY = y
+        this.dragStartX = x
+        this.dragStartY = y
         
         node.onDragStart()
       }
@@ -470,8 +465,8 @@ class NoteManager {
       const x = pos.x
       const y = pos.y      
       
-      const dx = x - this.startClientX
-      const dy = y - this.startClientY
+      const dx = x - this.dragStartX
+      const dy = y - this.dragStartY
       this.selectedNodes.forEach(node => {
         node.onDrag(dx, dy)
       })
@@ -481,8 +476,9 @@ class NoteManager {
   onDoubleClick(e) {
     const pos = this.getLocalPos(e)
     const x = pos.x
-    const y = pos.y    
-    
+    const y = pos.y
+
+    // TODO: 最初に見つけたものに限定
     this.nodes.forEach(node => {
       if( node.containsPos(x, y) ) {
         node.prepareInput()
