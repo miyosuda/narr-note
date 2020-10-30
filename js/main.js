@@ -492,13 +492,15 @@ class NoteManager {
     // TODO: 最初に見つけたものに限定
     this.nodes.forEach(node => {
       if( node.containsPos(x, y) ) {
-        // TODO:
-        //node.prepareInput()
+        // TODO: nodeをいったん消す
+        this.textInput.show(node.x(), node.y(), node.text)
       }
     })
   }
 
   onTextDecided(text) {
+    // 消したnodeの場所を覚えて置いて、そこに出す.
+    // 消したnodeの非表示情報も覚えておく必要あり.
     // TODO: 場所を指定する
     let x = 10
     let y = 10
