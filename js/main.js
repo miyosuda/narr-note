@@ -4,9 +4,7 @@ const getElementDimension = (html) => {
   
   // elementのsizeは子に依存
   element.style.display = 'inline-block'
-  
   element.style.visibility = 'hidden'
-  
   element.innerHTML = html
   
   document.body.append(element)
@@ -240,6 +238,7 @@ class Node {
     const top    = this.foreignObject.y.baseVal.value
     const width  = this.foreignObject.width.baseVal.value
     const height = this.foreignObject.height.baseVal.value
+
     return (x >= left) && (x <= left+width) && (y >= top) && (y <= top+height)
   }
 
@@ -286,7 +285,6 @@ class Node {
     textInput.addEventListener('keydown', (event) => {
       const key = event.keyCode || event.charCode || 0;
       if(key == 13) {
-        console.log("return pressed")
         // enterキーが押されたが入力が変更されていなかった場合
         if(!this.textChanged) {
           this.onTextChange(textInput.value)
@@ -373,10 +371,9 @@ class NoteManager {
     document.onmousedown = event => this.onMouseDown(event)
     document.onmouseup   = event => this.onMouseUp(event)
     document.onmousemove = event => this.onMouseMove(event)
-
     document.body.addEventListener('keydown',  event => this.onKeyDown(event))
     document.body.addEventListener('dblclick', evenet => this.onDoubleClick(event))
-    
+
     this.lastNode = null
     this.currentNode = null
   }
@@ -415,6 +412,18 @@ class NoteManager {
     this.seletedNodes = []
   }
 
+  getLocalPos(e) {
+    const rect = document.getElementById('svg').getBoundingClientRect()
+    
+    const x = e.clientX
+    const y = e.clientY
+
+    const pos = {}
+    pos.x = x - rect.left
+    pos.y = y - rect.top
+    return pos
+  }
+
   onKeyDown(e) {
     if( e.target != document.body ) {
       // input入力時のkey押下は無視する
@@ -432,15 +441,14 @@ class NoteManager {
   }
 
   onMouseDown(e) {
-    const x = e.clientX
-    const y = e.clientY
+    const pos = this.getLocalPos(e)
+    const x = pos.x
+    const y = pos.y
 
     this.selectedNodes = []
 
     this.nodes.forEach(node => {
       if( node.containsPos(x, y) ) {
-        console.log("conatins pos") //..
-        
         this.selectedNodes.push(node)
         this.isMouseDown = true
         this.startClientX = x
@@ -458,11 +466,12 @@ class NoteManager {
 
   onMouseMove(e) {
     if(this.isMouseDown == true) {
-      const dx = e.clientX - this.startClientX
-      const dy = e.clientY - this.startClientY
-      //const x = e.clientX
-      //const y = e.clientY      
-
+      const pos = this.getLocalPos(e)
+      const x = pos.x
+      const y = pos.y      
+      
+      const dx = x - this.startClientX
+      const dy = y - this.startClientY
       this.selectedNodes.forEach(node => {
         node.onDrag(dx, dy)
       })
@@ -470,11 +479,11 @@ class NoteManager {
   }
 
   onDoubleClick(e) {
-    const x = e.clientX
-    const y = e.clientY
+    const pos = this.getLocalPos(e)
+    const x = pos.x
+    const y = pos.y    
     
     this.nodes.forEach(node => {
-      // TODO:
       if( node.containsPos(x, y) ) {
         node.prepareInput()
       }
