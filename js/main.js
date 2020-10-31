@@ -1,3 +1,33 @@
+const NODE_TYPE_TEXT = 1
+
+class TextNodeData {
+  constructor(x, y, text) {
+    this.type = NODE_TYPE_TEXT
+    this.x = x
+    this.y = y
+    this.text = text
+  }
+
+  setText(text) {
+    // TODO: テキストの内容によってtypeが変わる場合があるのでそれの対応が必要
+    this.text = text
+  }
+}
+
+
+function clone(instance) {
+  return Object.assign(
+    Object.create(
+      // Set the prototype of the new object to the prototype of the instance.
+      // Used to allow new object behave like class instance.
+      Object.getPrototypeOf(instance),
+    ),
+    // Prevent shallow copies of nested structures like arrays, etc
+    JSON.parse(JSON.stringify(instance)),
+  );
+}
+
+
 // textノードのサイズを取得
 const getElementDimension = (html) => {
   const element = document.createElement('span')
@@ -208,13 +238,13 @@ const render = (text, element) => {
   }
 }
 
+
 class TextInput {
   constructor(noteManager) {
     this.noteManager = noteManager
     this.foreignObject = document.getElementById('textInputObj')
     
     let input = document.getElementById('textInput')
-    //input.setAttribute("type", "text")
     this.textChanged = false
 
     input.addEventListener('input', () => {
@@ -244,27 +274,27 @@ class TextInput {
     this.hide()
   }
 
-  show(x, y, text) {
-    let text_ = ""
-    if( text != null ) {
-      text_ = text
-    }
-    
-    let stringSize = getStringLengthWithMin(text_)
+  show(data) {
+    this.data = clone(data)
+    let stringSize = getStringLengthWithMin(this.data.text)
     this.input.setAttribute("size", stringSize)
-    this.input.value = text_
+    this.input.value = this.data.text
 
-    this.foreignObject.x.baseVal.value = x
-    this.foreignObject.y.baseVal.value = y
+    this.foreignObject.x.baseVal.value = this.data.x
+    this.foreignObject.y.baseVal.value = this.data.y
     this.foreignObject.width.baseVal.value = this.input.offsetWidth + 3
     this.foreignObject.height.baseVal.value = this.input.offsetHeight + 10
     this.foreignObject.style.display = 'block' // TODO: blockで良いかどうか確認
 
     this.input.focus()
+
+    this.textChanged = false
+    this.shown = true
   }
 
   hide() {
     this.foreignObject.style.display = 'none'
+    this.shown = false
   }
 
   onTextInput(value) {
@@ -280,21 +310,26 @@ class TextInput {
   }
   
   onTextChange(value) {
-    // テキスト入力が完了した    
-    noteManager.onTextDecided(value)
+    if(!this.shown) {
+      // hide()した後に呼ばれる場合があるのでその場合をskip
+      return
+    }
+    // テキスト入力が完了した
+    this.data.setText(value)
+    noteManager.onTextDecided(this.data)
     this.hide()
   }
 }
 
 
 class Node {
-  constructor(x, y, text) {
-    this.text = text
+  constructor(data) {
+    this.data = data
     
     let ns = 'http://www.w3.org/2000/svg'
     let foreignObject = document.createElementNS(ns, 'foreignObject')
-    foreignObject.x.baseVal.value = x
-    foreignObject.y.baseVal.value = y
+    foreignObject.x.baseVal.value = this.data.x
+    foreignObject.y.baseVal.value = this.data.y
     
     let g = document.getElementById('nodes')
     g.appendChild(foreignObject)
@@ -314,7 +349,7 @@ class Node {
   }
 
   prepare() {
-    render(this.text, this.foreignObject)
+    render(this.data.text, this.foreignObject)
 
     const dims = getElementDimension(this.foreignObject.innerHTML)
     this.foreignObject.width.baseVal.value = dims.width
@@ -322,21 +357,23 @@ class Node {
   }
 
   onDragStart() {
-    this.startElementX = this.foreignObject.x.baseVal.value
-    this.startElementY = this.foreignObject.y.baseVal.value
+    this.startElementX = this.data.x
+    this.startElementY = this.data.y
   }
 
   onDrag(dx, dy) {
-    this.foreignObject.x.baseVal.value = this.startElementX + dx
-    this.foreignObject.y.baseVal.value = this.startElementY + dy
+    this.data.x = this.startElementX + dx
+    this.data.y = this.startElementY + dy
+    this.foreignObject.x.baseVal.value = this.data.x
+    this.foreignObject.y.baseVal.value = this.data.y
   }
   
   x() {
-    return this.foreignObject.x.baseVal.value
+    return this.data.x
   }
 
   y() {
-    return this.foreignObject.y.baseVal.value
+    return this.data.y
   }
 
   remove() {
@@ -367,29 +404,6 @@ class NoteManager {
     this.textInput = new TextInput()
   }
 
-  /*
-  addNode(asSibling) {
-    let x = 10
-    let y = 10
-
-    if(this.lastNode != null) {
-      if(asSibling) {
-        x = this.lastNode.x() + 100
-        y = this.lastNode.y()
-      } else {
-        x = this.lastNode.x()
-        y = this.lastNode.y() + 50
-      }
-    }
-    
-    const text = null
-    let node = new Node(x, y, text)
-    this.lastNode = node
-
-    this.nodes.push(node)
-  }
-  */
-
   showInput(asSibling) {
     let x = 10
     let y = 10
@@ -404,7 +418,8 @@ class NoteManager {
       }
     }
 
-    this.textInput.show(x, y, null)
+    const data = new TextNodeData(x, y, "")
+    this.textInput.show(data)
   }
 
   deleteCurrentNode() {
@@ -467,14 +482,14 @@ class NoteManager {
 
   onMouseUp(e) {
     this.isMouseDown = false
-    this.selectedNodes = []
+    //..this.selectedNodes = []
   }
 
   onMouseMove(e) {
     if(this.isMouseDown == true) {
       const pos = this.getLocalPos(e)
       const x = pos.x
-      const y = pos.y      
+      const y = pos.y
       
       const dx = x - this.dragStartX
       const dy = y - this.dragStartY
@@ -489,22 +504,20 @@ class NoteManager {
     const x = pos.x
     const y = pos.y
 
-    // TODO: 最初に見つけたものに限定
-    this.nodes.forEach(node => {
+    for(let i=0; i<this.nodes.length; i++) {
+      // 最初に見つけたらそこでloopを抜ける
+      let node = this.nodes[i]
       if( node.containsPos(x, y) ) {
-        // TODO: nodeをいったん消す
-        this.textInput.show(node.x(), node.y(), node.text)
+        this.textInput.show(node.data)
+        this.nodes.splice(i, 1)
+        node.remove()
+        break
       }
-    })
+    }
   }
 
-  onTextDecided(text) {
-    // 消したnodeの場所を覚えて置いて、そこに出す.
-    // 消したnodeの非表示情報も覚えておく必要あり.
-    // TODO: 場所を指定する
-    let x = 10
-    let y = 10
-    let node = new Node(x, y, text)
+  onTextDecided(data) {
+    let node = new Node(data)
     this.lastNode = node
     this.nodes.push(node)
   }
