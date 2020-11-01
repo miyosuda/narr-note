@@ -36,12 +36,15 @@ const getElementDimension = (html) => {
   element.style.display = 'inline-block'
   element.style.visibility = 'hidden'
   element.innerHTML = html
+
+  //element.className = "node-text_selected" //..
   
   document.body.append(element)
   
   const dimensions = {}
-  dimensions.width = element.getBoundingClientRect().width
-  dimensions.height = element.getBoundingClientRect().height
+  // selected時のborderの為に幅を広げておく
+  dimensions.width = element.getBoundingClientRect().width + 2
+  dimensions.height = element.getBoundingClientRect().height + 2
 
   element.remove()
   return dimensions
@@ -330,6 +333,8 @@ class Node {
     let foreignObject = document.createElementNS(ns, 'foreignObject')
     foreignObject.x.baseVal.value = this.data.x
     foreignObject.y.baseVal.value = this.data.y
+
+    //foreignObject.classList.add("node-text_selected")
     
     let g = document.getElementById('nodes')
     g.appendChild(foreignObject)
@@ -356,9 +361,15 @@ class Node {
     this.foreignObject.height.baseVal.value = dims.height
   }
 
-  onDragStart() {
-    this.startElementX = this.data.x
-    this.startElementY = this.data.y
+  setSelected(selected) {
+    if(selected) {
+      this.startElementX = this.data.x
+      this.startElementY = this.data.y
+
+      this.foreignObject.classList.add("node-text_selected")
+    } else {
+      this.foreignObject.classList.remove("node-text_selected")
+    }
   }
 
   onDrag(dx, dy) {
@@ -475,7 +486,9 @@ class NoteManager {
         this.dragStartX = x
         this.dragStartY = y
         
-        node.onDragStart()
+        node.setSelected(true)
+      } else {
+        node.setSelected(false)
       }
     })
   }

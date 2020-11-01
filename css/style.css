@@ -1,8 +1,13 @@
 /* getElementDimension()でのサイズが2回目以降で異なる場合の為のworkaround */
+.node-text_selected {
+  border: solid 1px #7f7f7f;
+}
+
 foreignObject {
   overflow: visible;
 }
 
+/* textのspanに適用 */
 .disable-select {
   -ms-user-select: none;
   -webkit-user-select: none;
