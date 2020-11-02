@@ -1,7 +1,10 @@
-const NODE_TYPE_TEXT = 1
 
-class TextNodeData {
-  constructor(x, y, text) {
+const NODE_TYPE_TEXT = 1
+const NODE_TYPE_RECT = 2
+
+
+class NodeData {
+  constructor(x, y, text) {    
     this.type = NODE_TYPE_TEXT
     this.x = x
     this.y = y
@@ -9,13 +12,32 @@ class TextNodeData {
   }
 
   setText(text) {
-    // TODO: テキストの内容によってtypeが変わる場合があるのでそれの対応が必要
     this.text = text
+
+    const rectPattern = /^\[(\d+)\]$/
+    const rectMatchResult = text.match(rectPattern)
+    if( rectMatchResult != null ) {
+      this.type = NODE_TYPE_RECT
+      // TODO: カラーの対応
+      const rectColorId = rectMatchResult[1]
+      if( rectColorId == 0 ) {
+        this.color = "#FF0000"
+      } else if( rectColorId == 1 ) {
+        this.color = "#00FF00"
+      } else {
+        this.color = "#0000FF"
+      }
+      // TODO: width, heightが元々設定されていた場合の対応
+      this.width = 50
+      this.height = 50
+    } else {
+      this.type = NODE_TYPE_TEXT
+    }
   }
 }
 
 
-function clone(instance) {
+const clone = (instance) => {
   return Object.assign(
     Object.create(
       // Set the prototype of the new object to the prototype of the instance.
@@ -24,7 +46,7 @@ function clone(instance) {
     ),
     // Prevent shallow copies of nested structures like arrays, etc
     JSON.parse(JSON.stringify(instance)),
-  );
+  )
 }
 
 
@@ -325,7 +347,7 @@ class TextInput {
 }
 
 
-class Node {
+class TextNode {
   constructor(data) {
     this.data = data
     
@@ -371,7 +393,7 @@ class Node {
 
   onDragStart() {
     this.startElementX = this.data.x
-    this.startElementY = this.data.y    
+    this.startElementY = this.data.y
   }
 
   onDrag(dx, dy) {
@@ -395,6 +417,85 @@ class Node {
 
   isSelected() {
     return this.selected
+  }
+}
+
+
+class RectNode {
+  constructor(data) {
+    this.data = data
+    
+    let ns = 'http://www.w3.org/2000/svg'
+    let element = document.createElementNS(ns, 'rect')
+
+    element.setAttribute('x', data.x)
+    element.setAttribute('y', data.y)
+    element.setAttribute('width', data.width)
+    element.setAttribute('height', data.height)
+    element.setAttribute('rx', 10)
+    element.setAttribute('ry', 10)
+    element.setAttribute('fill', data.color)
+    element.setAttribute('fill-opacity', 0.2)
+    
+    let g = document.getElementById('nodes')
+    g.appendChild(element)
+    
+    this.element = element
+    this.selected = false
+  }
+
+  containsPos(x, y) {
+    const left   = this.data.x
+    const top    = this.data.y
+    const width  = this.data.width
+    const height = this.data.height
+    
+    return (x >= left) && (x <= left+width) && (y >= top) && (y <= top+height)
+  }
+
+  setSelected(selected) {
+    // TODO: 選択状態の可視化
+    this.selected = selected
+  }
+
+  onDragStart() {
+    this.startElementX = this.data.x
+    this.startElementY = this.data.y
+  }
+
+  onDrag(dx, dy) {
+    this.data.x = this.startElementX + dx
+    this.data.y = this.startElementY + dy
+
+    this.element.setAttribute('x', this.data.x)
+    this.element.setAttribute('y', this.data.y)
+  }
+  
+  x() {
+    return this.data.x
+  }
+
+  y() {
+    return this.data.y
+  }
+
+  remove() {
+    this.element.remove()
+  }
+
+  isSelected() {
+    return this.selected
+  }
+}
+
+
+const createNode = (data) => {
+  if( data.type == NODE_TYPE_TEXT ) {
+    return new TextNode(data)
+  } else if( data.type == NODE_TYPE_RECT ) {
+    return new RectNode(data)
+  } else {
+    return null
   }
 }
 
@@ -433,7 +534,7 @@ class NoteManager {
       }
     }
 
-    const data = new TextNodeData(x, y, "")
+    const data = new NodeData(x, y, "")
     this.textInput.show(data)
   }
 
@@ -552,7 +653,7 @@ class NoteManager {
   }
 
   onTextDecided(data) {
-    let node = new Node(data)
+    const node = createNode(data)
     this.lastNode = node
     this.nodes.push(node)
   }
