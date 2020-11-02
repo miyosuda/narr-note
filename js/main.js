@@ -334,14 +334,13 @@ class Node {
     foreignObject.x.baseVal.value = this.data.x
     foreignObject.y.baseVal.value = this.data.y
 
-    //foreignObject.classList.add("node-text_selected")
-    
     let g = document.getElementById('nodes')
     g.appendChild(foreignObject)
     
     this.foreignObject = foreignObject
     
     this.prepare()
+    this.selected = false
   }
 
   containsPos(x, y) {
@@ -363,13 +362,16 @@ class Node {
 
   setSelected(selected) {
     if(selected) {
-      this.startElementX = this.data.x
-      this.startElementY = this.data.y
-
       this.foreignObject.classList.add("node-text_selected")
     } else {
       this.foreignObject.classList.remove("node-text_selected")
     }
+    this.selected = selected
+  }
+
+  onDragStart() {
+    this.startElementX = this.data.x
+    this.startElementY = this.data.y    
   }
 
   onDrag(dx, dy) {
@@ -390,6 +392,10 @@ class Node {
   remove() {
     this.foreignObject.remove()
   }
+
+  isSelected() {
+    return this.selected
+  }
 }
 
 
@@ -398,7 +404,7 @@ class NoteManager {
     this.isMouseDown = false
     this.dragStartX = 0
     this.dragStartY = 0
-    this.selctedNodes = []
+    this.selectedNodes = []
     this.nodes = []
   }
 
@@ -410,8 +416,6 @@ class NoteManager {
     document.body.addEventListener('dblclick', evenet => this.onDoubleClick(event))
 
     this.lastNode = null
-    this.currentNode = null
-
     this.textInput = new TextInput()
   }
 
@@ -433,9 +437,9 @@ class NoteManager {
     this.textInput.show(data)
   }
 
-  deleteCurrentNode() {
+  deleteSelectedNodes() {
     this.selectedNodes.forEach(node => {
-      const nodeIndex = this.nodes.indexOf(this.currentNode)
+      const nodeIndex = this.nodes.indexOf(node)
       if(nodeIndex >= 0) {
         this.nodes.splice(nodeIndex, 1)
       }
@@ -468,7 +472,7 @@ class NoteManager {
     } else if(e.key === 'Enter' ) {
       this.showInput(false)
     } else if(e.key === 'Backspace' ) {
-      this.deleteCurrentNode()
+      this.deleteSelectedNodes()
     }
   }
 
@@ -477,25 +481,43 @@ class NoteManager {
     const x = pos.x
     const y = pos.y
 
+    // 今回既に選択済のNode上のクリックだったかどうか
+    let hitOnSelectedNode = false
+    for(let i=0; i<this.nodes.length; i++) {
+      let node = this.nodes[i]
+      if( node.containsPos(x, y) && node.isSelected() ) {
+        hitOnSelectedNode = true
+        break
+      }
+    }
+    
+    const addingSelection = e.shiftKey || hitOnSelectedNode
     this.selectedNodes = []
-
+    
     this.nodes.forEach(node => {
       if( node.containsPos(x, y) ) {
-        this.selectedNodes.push(node)
         this.isMouseDown = true
         this.dragStartX = x
         this.dragStartY = y
-        
         node.setSelected(true)
+        node.onDragStart()
+        this.selectedNodes.push(node)
       } else {
-        node.setSelected(false)
+        if( addingSelection ) {
+          if( node.isSelected() ) {
+            // 選択済みのものであれば
+            node.onDragStart()
+            this.selectedNodes.push(node)
+          }
+        } else {
+          node.setSelected(false)
+        }
       }
     })
   }
 
   onMouseUp(e) {
     this.isMouseDown = false
-    //..this.selectedNodes = []
   }
 
   onMouseMove(e) {
