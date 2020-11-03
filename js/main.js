@@ -429,6 +429,7 @@ const rectAnchorInfos = [
     top    : true,
     right  : false,
     bottom : false,
+    cursor : 'nw-resize',
   },
   // 上
   {
@@ -438,6 +439,7 @@ const rectAnchorInfos = [
     top    : true,
     right  : false,
     bottom : false,
+    cursor : 'n-resize',
   },
   // 右上
   {
@@ -447,6 +449,7 @@ const rectAnchorInfos = [
     top    : true,
     right  : true,
     bottom : false,
+    cursor : 'ne-resize',
   },
   // 右
   {
@@ -456,6 +459,7 @@ const rectAnchorInfos = [
     top    : false,
     right  : true,
     bottom : false,
+    cursor : 'e-resize',
   },
   // 右下
   {
@@ -465,6 +469,7 @@ const rectAnchorInfos = [
     top    : false,
     right  : true,
     bottom : true,
+    cursor : 'se-resize',
   },
   // 下
   {
@@ -474,6 +479,7 @@ const rectAnchorInfos = [
     top    : false,
     right  : false,
     bottom : true,
+    cursor : 's-resize',
   },
   // 左下
   {
@@ -483,6 +489,7 @@ const rectAnchorInfos = [
     top    : false,
     right  : false,
     bottom : true,
+    cursor : 'sw-resize',
   },
   // 左  
   {
@@ -492,6 +499,7 @@ const rectAnchorInfos = [
     top    : false,
     right  : false,
     bottom : false,
+    cursor : 'w-resize',
   },
 ]
 
@@ -523,6 +531,7 @@ class RectNode {
       const anchorWidth = 5
       const x = rectAnchorInfos[i].x * data.width
       const y = rectAnchorInfos[i].y * data.height
+      const cursor = rectAnchorInfos[i].cursor
       
       anchorElement.setAttribute('x', x - anchorWidth/2)
       anchorElement.setAttribute('y', y - anchorWidth/2)
@@ -532,6 +541,9 @@ class RectNode {
       anchorElement.setAttribute('stroke', 'black')
       anchorElement.setAttribute('stroke-width', 0.5)
       anchorElement.setAttribute('visibility', 'hidden')
+      anchorElement.setAttribute('visibility', 'hidden')
+      anchorElement.style.cursor = cursor
+      
       element.appendChild(anchorElement)
       
       this.anchorElements.push(anchorElement)
