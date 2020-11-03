@@ -420,6 +420,81 @@ class TextNode {
   }
 }
 
+const rectAnchorInfos = [
+  // 左上
+  {
+    x : 0.0,
+    y : 0.0,
+    left   : true,
+    top    : true,
+    right  : false,
+    bottom : false,
+  },
+  // 上
+  {
+    x : 0.5,
+    y : 0.0,
+    left   : false,
+    top    : true,
+    right  : false,
+    bottom : false,
+  },
+  // 右上
+  {
+    x : 1.0,
+    y : 0.0,
+    left   : false,
+    top    : true,
+    right  : true,
+    bottom : false,
+  },
+  // 右
+  {
+    x : 1.0,
+    y : 0.5,
+    left   : false,
+    top    : false,
+    right  : true,
+    bottom : false,
+  },
+  // 右下
+  {
+    x : 1.0,
+    y : 1.0,
+    left   : false,
+    top    : false,
+    right  : true,
+    bottom : true,
+  },
+  // 下
+  {
+    x : 0.5,
+    y : 1.0,
+    left   : false,
+    top    : false,
+    right  : false,
+    bottom : true,
+  },
+  // 左下
+  {
+    x : 0.0,
+    y : 1.0,
+    left   : true,
+    top    : false,
+    right  : false,
+    bottom : true,
+  },
+  // 左  
+  {
+    x : 0.0,
+    y : 0.5,
+    left   : true,
+    top    : false,
+    right  : false,
+    bottom : false,
+  },
+]
+
 
 class RectNode {
   constructor(data) {
@@ -428,7 +503,7 @@ class RectNode {
     let ns = 'http://www.w3.org/2000/svg'
     let element = document.createElementNS(ns, 'g')
     element.setAttribute('transform',
-                         'translate(' + data.x + ',' + data.y + ')')    
+                         'translate(' + data.x + ',' + data.y + ')')
 
     let innerElement = document.createElementNS(ns, 'rect')
     innerElement.setAttribute('x', 0)
@@ -439,18 +514,28 @@ class RectNode {
     innerElement.setAttribute('ry', 10)
     innerElement.setAttribute('fill', data.color)
     innerElement.setAttribute('fill-opacity', 0.2)
-    element.appendChild(innerElement)    
+    element.appendChild(innerElement)
 
-    let anchorElement0 = document.createElementNS(ns, 'rect')
-    const anchorWidth = 5
-    anchorElement0.setAttribute('x', -anchorWidth/2)
-    anchorElement0.setAttribute('y', -anchorWidth/2)
-    anchorElement0.setAttribute('width', anchorWidth)
-    anchorElement0.setAttribute('height', anchorWidth)
-    anchorElement0.setAttribute('fill', 'white')
-    anchorElement0.setAttribute('stroke', 'black')
-    anchorElement0.setAttribute('stroke-width', 0.5)
-    element.appendChild(anchorElement0)
+    this.anchorElements = []
+
+    for(let i=0; i<rectAnchorInfos.length; i++) {
+      let anchorElement = document.createElementNS(ns, 'rect')
+      const anchorWidth = 5
+      const x = rectAnchorInfos[i].x * data.width
+      const y = rectAnchorInfos[i].y * data.height
+      
+      anchorElement.setAttribute('x', x - anchorWidth/2)
+      anchorElement.setAttribute('y', y - anchorWidth/2)
+      anchorElement.setAttribute('width',  anchorWidth)
+      anchorElement.setAttribute('height', anchorWidth)
+      anchorElement.setAttribute('fill', 'white')
+      anchorElement.setAttribute('stroke', 'black')
+      anchorElement.setAttribute('stroke-width', 0.5)
+      anchorElement.setAttribute('visibility', 'hidden')
+      element.appendChild(anchorElement)
+      
+      this.anchorElements.push(anchorElement)
+    }
     
     let g = document.getElementById('nodes')
     g.appendChild(element)
@@ -470,8 +555,15 @@ class RectNode {
   }
 
   setSelected(selected) {
-    // TODO: 選択状態の可視化
     this.selected = selected
+    const visibility = selected
+          ?
+          'visible'
+          :
+          'hidden'
+    this.anchorElements.forEach(anchorElement => {
+      anchorElement.setAttribute('visibility', visibility)
+    })
   }
 
   onDragStart() {
@@ -535,7 +627,16 @@ class NoteManager {
     this.textInput = new TextInput()
   }
 
+  clearSelection() {
+    this.selectedNodes.forEach(node => {
+      node.setSelected(false)
+    })
+    this.selectedNodes = []
+  }
+
   showInput(asSibling) {
+    this.clearSelection()
+    
     let x = 10
     let y = 10
 
