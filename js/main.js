@@ -4,7 +4,7 @@ const NODE_TYPE_RECT = 2
 
 
 class NodeData {
-  constructor(x, y, text) {    
+  constructor(x, y, text) {
     this.type = NODE_TYPE_TEXT
     this.x = x
     this.y = y
@@ -426,21 +426,37 @@ class RectNode {
     this.data = data
     
     let ns = 'http://www.w3.org/2000/svg'
-    let element = document.createElementNS(ns, 'rect')
+    let element = document.createElementNS(ns, 'g')
+    element.setAttribute('transform',
+                         'translate(' + data.x + ',' + data.y + ')')    
 
-    element.setAttribute('x', data.x)
-    element.setAttribute('y', data.y)
-    element.setAttribute('width', data.width)
-    element.setAttribute('height', data.height)
-    element.setAttribute('rx', 10)
-    element.setAttribute('ry', 10)
-    element.setAttribute('fill', data.color)
-    element.setAttribute('fill-opacity', 0.2)
+    let innerElement = document.createElementNS(ns, 'rect')
+    innerElement.setAttribute('x', 0)
+    innerElement.setAttribute('y', 0)
+    innerElement.setAttribute('width', data.width)
+    innerElement.setAttribute('height', data.height)
+    innerElement.setAttribute('rx', 10)
+    innerElement.setAttribute('ry', 10)
+    innerElement.setAttribute('fill', data.color)
+    innerElement.setAttribute('fill-opacity', 0.2)
+    element.appendChild(innerElement)    
+
+    let anchorElement0 = document.createElementNS(ns, 'rect')
+    const anchorWidth = 5
+    anchorElement0.setAttribute('x', -anchorWidth/2)
+    anchorElement0.setAttribute('y', -anchorWidth/2)
+    anchorElement0.setAttribute('width', anchorWidth)
+    anchorElement0.setAttribute('height', anchorWidth)
+    anchorElement0.setAttribute('fill', 'white')
+    anchorElement0.setAttribute('stroke', 'black')
+    anchorElement0.setAttribute('stroke-width', 0.5)
+    element.appendChild(anchorElement0)
     
     let g = document.getElementById('nodes')
     g.appendChild(element)
     
     this.element = element
+    this.innerElement = innerElement
     this.selected = false
   }
 
@@ -466,9 +482,8 @@ class RectNode {
   onDrag(dx, dy) {
     this.data.x = this.startElementX + dx
     this.data.y = this.startElementY + dy
-
-    this.element.setAttribute('x', this.data.x)
-    this.element.setAttribute('y', this.data.y)
+    this.element.setAttribute('transform',
+                              'translate(' + this.data.x + ',' + this.data.y + ')')
   }
   
   x() {
