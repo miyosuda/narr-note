@@ -585,7 +585,7 @@ class Anchor {
   }
 
   containsPos(x, y) {
-    // TODO: 余裕を持たせてもいいかも
+    // 範囲判定に少し余裕を持たせた
     const hitWidth = ANCHOR_WIDTH + 2
     
     const left = this.x() - hitWidth/2
@@ -849,7 +849,7 @@ class NoteManager {
         y = this.lastNode.top()
       } else {
         x = this.lastNode.left()
-        y = this.lastNode.bottom() + 20
+        y = this.lastNode.bottom() + 10
       }
     }
 
