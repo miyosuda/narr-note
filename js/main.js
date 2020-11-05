@@ -420,11 +420,11 @@ class TextNode {
   }
 }
 
-const rectAnchorInfos = [
+const rectAnchorData = [
   // 左上
   {
-    x : 0.0,
-    y : 0.0,
+    relativeX : 0.0,
+    relativeY : 0.0,
     left   : true,
     top    : true,
     right  : false,
@@ -433,8 +433,8 @@ const rectAnchorInfos = [
   },
   // 上
   {
-    x : 0.5,
-    y : 0.0,
+    relativeX : 0.5,
+    relativeY : 0.0,
     left   : false,
     top    : true,
     right  : false,
@@ -443,8 +443,8 @@ const rectAnchorInfos = [
   },
   // 右上
   {
-    x : 1.0,
-    y : 0.0,
+    relativeX : 1.0,
+    relativeY : 0.0,
     left   : false,
     top    : true,
     right  : true,
@@ -453,8 +453,8 @@ const rectAnchorInfos = [
   },
   // 右
   {
-    x : 1.0,
-    y : 0.5,
+    relativeX : 1.0,
+    relativeY : 0.5,
     left   : false,
     top    : false,
     right  : true,
@@ -463,8 +463,8 @@ const rectAnchorInfos = [
   },
   // 右下
   {
-    x : 1.0,
-    y : 1.0,
+    relativeX : 1.0,
+    relativeY : 1.0,
     left   : false,
     top    : false,
     right  : true,
@@ -473,8 +473,8 @@ const rectAnchorInfos = [
   },
   // 下
   {
-    x : 0.5,
-    y : 1.0,
+    relativeX : 0.5,
+    relativeY : 1.0,
     left   : false,
     top    : false,
     right  : false,
@@ -483,8 +483,8 @@ const rectAnchorInfos = [
   },
   // 左下
   {
-    x : 0.0,
-    y : 1.0,
+    relativeX : 0.0,
+    relativeY : 1.0,
     left   : true,
     top    : false,
     right  : false,
@@ -493,8 +493,8 @@ const rectAnchorInfos = [
   },
   // 左  
   {
-    x : 0.0,
-    y : 0.5,
+    relativeX : 0.0,
+    relativeY : 0.5,
     left   : true,
     top    : false,
     right  : false,
@@ -502,6 +502,42 @@ const rectAnchorInfos = [
     cursor : 'w-resize',
   },
 ]
+
+
+class Anchor {
+  constructor(node, data) {
+    let ns = 'http://www.w3.org/2000/svg'
+    let element = document.createElementNS(ns, 'rect')
+    const anchorWidth = 5
+    const x = data.relativeX * node.data.width
+    const y = data.relativeY * node.data.height
+    const cursor = data.cursor
+    
+    element.setAttribute('x', x - anchorWidth/2)
+    element.setAttribute('y', y - anchorWidth/2)
+    element.setAttribute('width',  anchorWidth)
+    element.setAttribute('height', anchorWidth)
+    element.setAttribute('fill', 'white')
+    element.setAttribute('stroke', 'black')
+    element.setAttribute('stroke-width', 0.5)
+    element.setAttribute('visibility', 'hidden')
+    element.setAttribute('visibility', 'hidden')
+    element.style.cursor = cursor
+
+    node.element.appendChild(element)
+
+    this.node = node // ターゲットとなるNode    
+    this.element = element
+  }
+
+  show() {
+    this.element.setAttribute('visibility', 'visible')
+  }
+
+  hide() {
+    this.element.setAttribute('visibility', 'hidden')
+  }
+}
 
 
 class RectNode {
@@ -524,35 +560,17 @@ class RectNode {
     innerElement.setAttribute('fill-opacity', 0.2)
     element.appendChild(innerElement)
 
-    this.anchorElements = []
+    this.element = element
 
-    for(let i=0; i<rectAnchorInfos.length; i++) {
-      let anchorElement = document.createElementNS(ns, 'rect')
-      const anchorWidth = 5
-      const x = rectAnchorInfos[i].x * data.width
-      const y = rectAnchorInfos[i].y * data.height
-      const cursor = rectAnchorInfos[i].cursor
-      
-      anchorElement.setAttribute('x', x - anchorWidth/2)
-      anchorElement.setAttribute('y', y - anchorWidth/2)
-      anchorElement.setAttribute('width',  anchorWidth)
-      anchorElement.setAttribute('height', anchorWidth)
-      anchorElement.setAttribute('fill', 'white')
-      anchorElement.setAttribute('stroke', 'black')
-      anchorElement.setAttribute('stroke-width', 0.5)
-      anchorElement.setAttribute('visibility', 'hidden')
-      anchorElement.setAttribute('visibility', 'hidden')
-      anchorElement.style.cursor = cursor
-      
-      element.appendChild(anchorElement)
-      
-      this.anchorElements.push(anchorElement)
+    this.anchors = []
+    for(let i=0; i<rectAnchorData.length; i++) {
+      const anchor = new Anchor(this, rectAnchorData[i])
+      this.anchors.push(anchor)
     }
     
     let g = document.getElementById('nodes')
     g.appendChild(element)
     
-    this.element = element
     this.innerElement = innerElement
     this.selected = false
   }
@@ -568,13 +586,12 @@ class RectNode {
 
   setSelected(selected) {
     this.selected = selected
-    const visibility = selected
-          ?
-          'visible'
-          :
-          'hidden'
-    this.anchorElements.forEach(anchorElement => {
-      anchorElement.setAttribute('visibility', visibility)
+    this.anchors.forEach(anchor => {
+      if(selected) {
+        anchor.show()
+      } else {
+        anchor.hide()
+      }
     })
   }
 
