@@ -1,6 +1,6 @@
 /* getElementDimension()でのサイズが2回目以降で異なる場合の為のworkaround */
 .node-text_selected {
-  border: solid 1px #7f7f7f;
+  border: solid 1px #afafaf;
 }
 
 foreignObject {
@@ -16,6 +16,7 @@ foreignObject {
 
 
 /* katex font size */
-.katex {
-  font-size: 2.0em;
+.katex-display {
+  font-size: 1.5em;
 }
+

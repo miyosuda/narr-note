@@ -412,7 +412,7 @@ class TextNode {
   }
 
   right() {
-    return this.data.x + this.foreignObject.width.baseVal.value
+    return this.left() + this.width()
   }
 
   top() {
@@ -420,7 +420,15 @@ class TextNode {
   }
 
   bottom() {
-    return this.data.y + this.foreignObject.height.baseVal.value
+    return this.top() + this.height()
+  }
+
+  width() {
+    return this.foreignObject.width.baseVal.value
+  }
+
+  height() {
+    return this.foreignObject.height.baseVal.value
   }
 
   remove() {
@@ -429,6 +437,11 @@ class TextNode {
 
   isSelected() {
     return this.selected
+  }
+
+  area() {
+    // 面積を返す
+    return this.width() * this.height()
   }
 }
 
@@ -573,9 +586,11 @@ class Anchor {
 
   containsPos(x, y) {
     // TODO: 余裕を持たせてもいいかも
-    const left = this.x() - ANCHOR_WIDTH/2
-    const top  = this.y() - ANCHOR_WIDTH/2
-    return (x >= left) && (x <= left + ANCHOR_WIDTH) && (y >= top) && (y <= top + ANCHOR_WIDTH)
+    const hitWidth = ANCHOR_WIDTH + 2
+    
+    const left = this.x() - hitWidth/2
+    const top  = this.y() - hitWidth/2
+    return (x >= left) && (x <= left + hitWidth) && (y >= top) && (y <= top + hitWidth)
   }
 
   onDragStart() {
@@ -726,12 +741,16 @@ class RectNode {
     return this.data.width
   }
 
+  height() {
+    return this.data.height
+  }  
+
   left() {
     return this.data.x
   }
 
   right() {
-    return this.data.x + this.data.width
+    return this.left() + this.width()
   }
 
   top() {
@@ -739,11 +758,7 @@ class RectNode {
   }
 
   bottom() {
-    return this.data.y + this.data.height
-  }
-
-  height() {
-    return this.data.height
+    return this.top() + this.height()
   }
 
   setLeft(left) {
@@ -774,6 +789,11 @@ class RectNode {
 
   isSelected() {
     return this.selected
+  }
+
+  area() {
+    // 面積を返す
+    return this.width() * this.height()
   }
 }
 
@@ -906,39 +926,61 @@ class NoteManager {
       return
     }
 
+    // マウスが乗った物のなから一番小さい物をまずpick対象として選ぶ
+    const pickNodeCandidates = []
+    let pickNode = null    
+    
+    for(let i=0; i<this.nodes.length; i++) {
+      const node = this.nodes[i]
+      if( node.containsPos(x, y) ) {
+        pickNodeCandidates.push(node)
+      }
+    }
+
+    if( pickNodeCandidates.length > 0 ) {
+      pickNodeCandidates.sort((node0, node1) => {
+        // 面積が小さい方を優先
+        return node0.area() - node1.area()
+      })
+      pickNode = pickNodeCandidates[0]
+    }
+    
     // 今回既に選択済のNode上のクリックだったかどうか
     let hitOnSelectedNode = false
-    for(let i=0; i<this.nodes.length; i++) {
-      let node = this.nodes[i]
-      if( node.containsPos(x, y) && node.isSelected() ) {
-        hitOnSelectedNode = true
-        break
-      }
+    
+    if( pickNode != null && pickNode.isSelected() ) {
+      hitOnSelectedNode = true
     }
     
     const addingSelection = e.shiftKey || hitOnSelectedNode
     this.selectedNodes = []
     
-    this.nodes.forEach(node => {
-      if( node.containsPos(x, y) ) {
-        this.isMouseDown = true
-        this.dragStartX = x
-        this.dragStartY = y
-        node.setSelected(true)
-        node.onDragStart()
-        this.selectedNodes.push(node)
+    for(let i=0; i<this.nodes.length; i++) {
+      const node = this.nodes[i]
+      if( addingSelection ) {
+        if( node.isSelected() && node != pickNode ) {
+          // 選択済みのものであれば
+          // Nodeがマウスの上になろうがなかろうが、drag start処理を行う.
+          node.onDragStart()
+          this.selectedNodes.push(node)
+        }
       } else {
-        if( addingSelection ) {
-          if( node.isSelected() ) {
-            // 選択済みのものであれば
-            node.onDragStart()
-            this.selectedNodes.push(node)
-          }
-        } else {
-          node.setSelected(false)
+        if( node != pickNode ) {
+          // 選択済みだった場合に選択状態をクリア
+          node.setSelected(false)          
         }
       }
-    })
+    }
+
+    if( pickNode != null ) {
+      pickNode.setSelected(true)
+      pickNode.onDragStart()
+      this.selectedNodes.push(pickNode)
+
+      this.isMouseDown = true
+      this.dragStartX = x
+      this.dragStartY = y      
+    }
   }
 
   onMouseUp(e) {
@@ -961,7 +1003,7 @@ class NoteManager {
       const x = pos.x
       const y = pos.y
       const dx = x - this.dragStartX
-      const dy = y - this.dragStartY      
+      const dy = y - this.dragStartY 
       
       if( this.selectedAnchor != null ) {
         this.selectedAnchor.onDrag(dx, dy)
