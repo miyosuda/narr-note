@@ -503,6 +503,7 @@ const rectAnchorData = [
   },
 ]
 
+
 const ANCHOR_WIDTH = 5
 
 class Anchor {
@@ -557,6 +558,16 @@ class Anchor {
     const left = this.x() - ANCHOR_WIDTH/2
     const top  = this.y() - ANCHOR_WIDTH/2
     return (x >= left) && (x <= left + ANCHOR_WIDTH) && (y >= top) && (y <= top + ANCHOR_WIDTH)
+  }
+
+  onDragStart() {
+    // TODO:
+    //this.startElementX = this.data.x
+    //this.startElementY = this.data.y
+  }
+
+  onDrag(dx, dy) {
+    // TODO:
   }
 }
 
@@ -685,6 +696,7 @@ class NoteManager {
     this.dragStartX = 0
     this.dragStartY = 0
     this.selectedNodes = []
+    this.selectedAnchor = null
     this.nodes = []
   }
 
@@ -770,16 +782,30 @@ class NoteManager {
     const x = pos.x
     const y = pos.y
 
-    //..
+    // Anchorの上のクリックかどうか
     for(let i=0; i<this.nodes.length; i++) {
       let node = this.nodes[i]
       const anchor = node.containsPosOnAnchor(x, y)
       if(anchor != null) {
-        console.log("hit on anchor")
+        this.selectedAnchor = anchor
         break
       }
     }
-    //..
+
+    if( this.selectedAnchor != null ) {
+      this.isMouseDown = true
+      this.dragStartX = x
+      this.dragStartY = y
+
+      // 選択Nodeを一時的にnon selected表示に
+      this.selectedNodes.forEach(node => {
+        node.setSelected(false)
+      })
+
+      this.selectedAnchor.show()
+      this.selectedAnchor.onDragStart()
+      return
+    }
 
     // 今回既に選択済のNode上のクリックだったかどうか
     let hitOnSelectedNode = false
@@ -818,6 +844,16 @@ class NoteManager {
 
   onMouseUp(e) {
     this.isMouseDown = false
+
+    if( this.selectedAnchor != null ) {
+      this.selectedAnchor.hide()
+      this.selectedAnchor = null
+      
+      // 選択Nodeを一時的にselected表示戻す
+      this.selectedNodes.forEach(node => {
+        node.setSelected(true)
+      })
+    }
   }
 
   onMouseMove(e) {
@@ -825,12 +861,16 @@ class NoteManager {
       const pos = this.getLocalPos(e)
       const x = pos.x
       const y = pos.y
-      
       const dx = x - this.dragStartX
-      const dy = y - this.dragStartY
-      this.selectedNodes.forEach(node => {
-        node.onDrag(dx, dy)
-      })
+      const dy = y - this.dragStartY      
+      
+      if( this.selectedAnchor != null ) {
+        this.selectedAnchor.onDrag(dx, dy)
+      } else {
+        this.selectedNodes.forEach(node => {
+          node.onDrag(dx, dy)
+        })
+      }
     }
   }
 
