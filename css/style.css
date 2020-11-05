@@ -13,3 +13,9 @@ foreignObject {
   -webkit-user-select: none;
   user-select: none;
 }
+
+
+/* katex font size */
+.katex {
+  font-size: 2.0em;
+}
