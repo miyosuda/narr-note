@@ -374,6 +374,10 @@ class TextNode {
     return (x >= left) && (x <= left+width) && (y >= top) && (y <= top+height)
   }
 
+  containsPosOnAnchor(x, y) {
+    return null
+  }
+
   prepare() {
     render(this.data.text, this.foreignObject)
 
@@ -402,13 +406,21 @@ class TextNode {
     this.foreignObject.x.baseVal.value = this.data.x
     this.foreignObject.y.baseVal.value = this.data.y
   }
-  
-  x() {
+
+  left() {
     return this.data.x
   }
 
-  y() {
+  right() {
+    return this.data.x + this.foreignObject.width.baseVal.value
+  }
+
+  top() {
     return this.data.y
+  }
+
+  bottom() {
+    return this.data.y + this.foreignObject.height.baseVal.value
   }
 
   remove() {
@@ -509,16 +521,16 @@ const ANCHOR_WIDTH = 5
 class Anchor {
   constructor(node, data) {
     this.data = data
+    this.node = node // ターゲットとなるNode
+    
     let ns = 'http://www.w3.org/2000/svg'
     let element = document.createElementNS(ns, 'rect')
-
-    // Node座標系での位置
-    const localX = this.data.relativeX * node.width()
-    const localY = this.data.relativeY * node.height()
+    this.element = element
+    
     const cursor = this.data.cursor
     
-    element.setAttribute('x', localX - ANCHOR_WIDTH/2)
-    element.setAttribute('y', localY - ANCHOR_WIDTH/2)
+    this.applyPos()
+    
     element.setAttribute('width', ANCHOR_WIDTH)
     element.setAttribute('height', ANCHOR_WIDTH)
     element.setAttribute('fill', 'white')
@@ -529,9 +541,15 @@ class Anchor {
     element.style.cursor = cursor
 
     node.element.appendChild(element)
+  }
 
-    this.node = node // ターゲットとなるNode
-    this.element = element
+  applyPos() {
+    // Node座標系での位置
+    const localX = this.data.relativeX * this.node.width()
+    const localY = this.data.relativeY * this.node.height()
+    
+    this.element.setAttribute('x', localX - ANCHOR_WIDTH/2)
+    this.element.setAttribute('y', localY - ANCHOR_WIDTH/2)
   }
 
   show() {
@@ -542,15 +560,15 @@ class Anchor {
     this.element.setAttribute('visibility', 'hidden')
   }
 
-  // global座標系での位置
+  // global座標系での中心位置
   x() {
     const localX = this.data.relativeX * this.node.width()
-    return this.node.x() + localX
+    return this.node.left() + localX
   }
 
   y() {
     const localY = this.data.relativeY * this.node.height()
-    return this.node.y() + localY
+    return this.node.top() + localY
   }
 
   containsPos(x, y) {
@@ -561,13 +579,51 @@ class Anchor {
   }
 
   onDragStart() {
-    // TODO:
-    //this.startElementX = this.data.x
-    //this.startElementY = this.data.y
+    if(this.data.left) {
+      this.startLeft = this.node.left()
+    }
+    if(this.data.right) {
+      this.startRight = this.node.right()
+    }
+    if(this.data.top) {
+      this.startTop = this.node.top()
+    }
+    if(this.data.bottom) {
+      this.startBottom = this.node.bottom()
+    }
   }
 
   onDrag(dx, dy) {
-    // TODO:
+    if(this.data.left) {
+      let left = this.startLeft + dx
+      if(left > this.node.right()) {
+        left = this.node.right()
+      }
+      this.node.setLeft(left)
+    }
+    if(this.data.right) {
+      let right = this.startRight + dx
+      if(right < this.node.left()) {
+        right = this.node.left()
+      }
+      this.node.setRight(right)
+    }
+    if(this.data.top) {
+      let top = this.startTop + dy
+      if(top > this.node.bottom()) {
+        top = this.node.bottom()
+      }
+      this.node.setTop(top)
+    }
+    if(this.data.bottom) {
+      let bottom = this.startBottom + dy
+      if(bottom < this.node.top()) {
+        bottom = this.node.top()
+      }
+      this.node.setBottom(bottom)
+    }
+    this.node.applyPos()
+    this.node.applyWH()
   }
 }
 
@@ -578,32 +634,32 @@ class RectNode {
     
     let ns = 'http://www.w3.org/2000/svg'
     let element = document.createElementNS(ns, 'g')
-    element.setAttribute('transform',
-                         'translate(' + data.x + ',' + data.y + ')')
+    this.element = element
 
+    this.applyPos()
+    
     let innerElement = document.createElementNS(ns, 'rect')
+    this.innerElement = innerElement   
+    
     innerElement.setAttribute('x', 0)
     innerElement.setAttribute('y', 0)
-    innerElement.setAttribute('width', data.width)
-    innerElement.setAttribute('height', data.height)
     innerElement.setAttribute('rx', 10)
     innerElement.setAttribute('ry', 10)
     innerElement.setAttribute('fill', data.color)
     innerElement.setAttribute('fill-opacity', 0.2)
     element.appendChild(innerElement)
 
-    this.element = element
-
     this.anchors = []
     for(let i=0; i<rectAnchorData.length; i++) {
       const anchor = new Anchor(this, rectAnchorData[i])
       this.anchors.push(anchor)
     }
+
+    this.applyWH()
     
     let g = document.getElementById('nodes')
     g.appendChild(element)
     
-    this.innerElement = innerElement
     this.selected = false
   }
 
@@ -641,6 +697,20 @@ class RectNode {
     })
   }
 
+  applyPos() {
+    this.element.setAttribute('transform',
+                              'translate(' + this.data.x + ',' + this.data.y + ')')
+  }
+
+  applyWH() {
+    this.innerElement.setAttribute('width', this.data.width)
+    this.innerElement.setAttribute('height', this.data.height)
+
+    this.anchors.forEach(anchor => {
+      anchor.applyPos()
+    })    
+  }  
+
   onDragStart() {
     this.startElementX = this.data.x
     this.startElementY = this.data.y
@@ -649,24 +719,53 @@ class RectNode {
   onDrag(dx, dy) {
     this.data.x = this.startElementX + dx
     this.data.y = this.startElementY + dy
-    this.element.setAttribute('transform',
-                              'translate(' + this.data.x + ',' + this.data.y + ')')
-  }
-  
-  x() {
-    return this.data.x
-  }
-
-  y() {
-    return this.data.y
+    this.applyPos()
   }
 
   width() {
     return this.data.width
   }
 
+  left() {
+    return this.data.x
+  }
+
+  right() {
+    return this.data.x + this.data.width
+  }
+
+  top() {
+    return this.data.y
+  }
+
+  bottom() {
+    return this.data.y + this.data.height
+  }
+
   height() {
     return this.data.height
+  }
+
+  setLeft(left) {
+    const dx = left - this.data.x
+    this.data.x = left
+    this.data.width -= dx
+  }
+
+  setRight(right) {
+    const dx = right - this.right()
+    this.data.width += dx
+  }
+
+  setTop(top) {
+    const dy = top - this.data.y
+    this.data.y = top
+    this.data.height -= dy
+  }
+
+  setBottom(bottom) {
+    const dy = bottom - this.bottom()
+    this.data.height += dy
   }
 
   remove() {
@@ -726,11 +825,11 @@ class NoteManager {
 
     if(this.lastNode != null) {
       if(asSibling) {
-        x = this.lastNode.x() + 100
-        y = this.lastNode.y()
+        x = this.lastNode.right() + 30
+        y = this.lastNode.top()
       } else {
-        x = this.lastNode.x()
-        y = this.lastNode.y() + 50
+        x = this.lastNode.left()
+        y = this.lastNode.bottom() + 20
       }
     }
 
