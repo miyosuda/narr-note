@@ -893,6 +893,8 @@ class NoteManager {
       this.showInput(false)
     } else if(e.key === 'Backspace' ) {
       this.deleteSelectedNodes()
+    } else if(e.key === 'd' && e.ctrlKey) {
+      this.duplicateSelectedNodes()
     }
   }
 
@@ -1036,6 +1038,28 @@ class NoteManager {
     const node = createNode(data)
     this.lastNode = node
     this.nodes.push(node)
+  }
+
+  duplicateSelectedNodes() {
+    const duplicatedNodes = []
+    
+    this.selectedNodes.forEach(node => {
+      const newData = clone(node.data)
+      newData.x += 10
+      newData.y += 10
+
+      const newNode = createNode(newData)
+      duplicatedNodes.push(newNode)
+      this.lastNode = newNode
+      this.nodes.push(newNode)
+    })
+
+    this.clearSelection()
+    
+    this.selectedNodes = duplicatedNodes
+    this.selectedNodes.forEach(node => {
+      node.setSelected(true)
+    })
   }
 }
 
