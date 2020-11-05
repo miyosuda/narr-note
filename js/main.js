@@ -503,20 +503,23 @@ const rectAnchorData = [
   },
 ]
 
+const ANCHOR_WIDTH = 5
 
 class Anchor {
   constructor(node, data) {
+    this.data = data
     let ns = 'http://www.w3.org/2000/svg'
     let element = document.createElementNS(ns, 'rect')
-    const anchorWidth = 5
-    const x = data.relativeX * node.data.width
-    const y = data.relativeY * node.data.height
-    const cursor = data.cursor
+
+    // Node座標系での位置
+    const localX = this.data.relativeX * node.width()
+    const localY = this.data.relativeY * node.height()
+    const cursor = this.data.cursor
     
-    element.setAttribute('x', x - anchorWidth/2)
-    element.setAttribute('y', y - anchorWidth/2)
-    element.setAttribute('width',  anchorWidth)
-    element.setAttribute('height', anchorWidth)
+    element.setAttribute('x', localX - ANCHOR_WIDTH/2)
+    element.setAttribute('y', localY - ANCHOR_WIDTH/2)
+    element.setAttribute('width', ANCHOR_WIDTH)
+    element.setAttribute('height', ANCHOR_WIDTH)
     element.setAttribute('fill', 'white')
     element.setAttribute('stroke', 'black')
     element.setAttribute('stroke-width', 0.5)
@@ -526,7 +529,7 @@ class Anchor {
 
     node.element.appendChild(element)
 
-    this.node = node // ターゲットとなるNode    
+    this.node = node // ターゲットとなるNode
     this.element = element
   }
 
@@ -536,6 +539,24 @@ class Anchor {
 
   hide() {
     this.element.setAttribute('visibility', 'hidden')
+  }
+
+  // global座標系での位置
+  x() {
+    const localX = this.data.relativeX * this.node.width()
+    return this.node.x() + localX
+  }
+
+  y() {
+    const localY = this.data.relativeY * this.node.height()
+    return this.node.y() + localY
+  }
+
+  containsPos(x, y) {
+    // TODO: 余裕を持たせてもいいかも
+    const left = this.x() - ANCHOR_WIDTH/2
+    const top  = this.y() - ANCHOR_WIDTH/2
+    return (x >= left) && (x <= left + ANCHOR_WIDTH) && (y >= top) && (y <= top + ANCHOR_WIDTH)
   }
 }
 
@@ -584,6 +605,20 @@ class RectNode {
     return (x >= left) && (x <= left+width) && (y >= top) && (y <= top+height)
   }
 
+  containsPosOnAnchor(x, y) {
+    if(!this.selected) {
+      return null
+    }
+    
+    for(let i=0; i<this.anchors.length; i++) {
+      const anchor = this.anchors[i]
+      if(anchor.containsPos(x, y)) {
+        return anchor
+      }
+    }
+    return null
+  }
+
   setSelected(selected) {
     this.selected = selected
     this.anchors.forEach(anchor => {
@@ -613,6 +648,14 @@ class RectNode {
 
   y() {
     return this.data.y
+  }
+
+  width() {
+    return this.data.width
+  }
+
+  height() {
+    return this.data.height
   }
 
   remove() {
@@ -726,6 +769,17 @@ class NoteManager {
     const pos = this.getLocalPos(e)
     const x = pos.x
     const y = pos.y
+
+    //..
+    for(let i=0; i<this.nodes.length; i++) {
+      let node = this.nodes[i]
+      const anchor = node.containsPosOnAnchor(x, y)
+      if(anchor != null) {
+        console.log("hit on anchor")
+        break
+      }
+    }
+    //..
 
     // 今回既に選択済のNode上のクリックだったかどうか
     let hitOnSelectedNode = false
