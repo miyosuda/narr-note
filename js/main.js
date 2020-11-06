@@ -1116,19 +1116,64 @@ class NoteManager {
       const dy = y - this.dragStartY
 
       if( this.areaSelection.isShown() ) {
-        const addingSelection = e.shiftKey
+        const toggle = e.shiftKey
         
         const area = this.areaSelection.onDrag(x, y)
-
+        
         for(let i=0; i<this.nodes.length; i++) {
           const node = this.nodes[i]
+
+          /*
+          // shift押下時のoverlapはselecetdのnodeのselectedを外す場合
+          // TODO: このやり方だとtoggle指定時に、反転が起こってしまう
+          const overlap = node.overlaps(area)
+          const selected = node.isSelected()
+
+          let adding = false
+          let removing = false
+
+          if( overlap ) {
+            if( !toggle ) {
+              if( !selected ) {
+                adding = true
+              }
+            } else {
+              if( selected ) {
+                removing = true
+              } else {
+                adding = true
+              }
+            }
+          } else {
+            if( !toggle ) {
+              if( selected ) {
+                removing = true
+              }
+            }
+          }
+
+          if( adding ) {
+            this.selectedNodes.push(node)
+            node.setSelected(true)
+          }
+          if( removing ) {
+            // 選択済から削除
+            const nodeIndex = this.selectedNodes.indexOf(node)
+            if(nodeIndex >= 0) {
+              this.selectedNodes.splice(nodeIndex, 1)
+            }
+            node.setSelected(false)            
+          }
+          */
+
+          // shift押下時のoverlapは単に追加していく場合
           if( node.overlaps(area) ) {
             // 選択済に追加
             if( !node.isSelected() ) {
               this.selectedNodes.push(node)
               node.setSelected(true)
             }
-          } else if(!addingSelection) {
+          } else if(!toggle) {
             if( node.isSelected() ) {
               // 選択済から削除
               const nodeIndex = this.selectedNodes.indexOf(node)
