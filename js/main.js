@@ -435,7 +435,7 @@ class TextNode {
   }
 
   overlaps(area) {
-    return area.overlapsWithArea(this.area())
+    return area.overlapsWithArea(this.area)
   }  
 
   prepare() {
@@ -467,32 +467,32 @@ class TextNode {
     this.foreignObject.y.baseVal.value = this.data.y
   }
 
-  left() {
+  get left() {
     return this.data.x
   }
 
-  right() {
-    return this.left() + this.width()
+  get right() {
+    return this.left + this.width
   }
 
-  top() {
+  get top() {
     return this.data.y
   }
 
-  bottom() {
-    return this.top() + this.height()
+  get bottom() {
+    return this.top + this.height
   }
 
-  width() {
+  get width() {
     return this.foreignObject.width.baseVal.value
   }
 
-  height() {
+  get height() {
     return this.foreignObject.height.baseVal.value
   }
 
-  area() {
-    return new Area(this.left(), this.top(), this.width(), this.height())
+  get area() {
+    return new Area(this.left, this.top, this.width, this.height)
   }
 
   remove() {
@@ -505,7 +505,7 @@ class TextNode {
 
   areaSize() {
     // 面積を返す
-    return this.width() * this.height()
+    return this.width * this.height
   }
 }
 
@@ -601,19 +601,19 @@ class Area {
     this.height = height
   }
 
-  right() {
+  get right() {
     return this.left + this.width
   }
 
-  bottom() {
+  get bottom() {
     return this.top + this.height
   }  
 
   overlapsWithArea(area) {
-    return !(this.right()  < area.left     ||
-             this.left     > area.right()  ||
-             this.top      > area.bottom() ||
-             this.bottom() < area.top)
+    return !(this.right  < area.left   ||
+             this.left   > area.right  ||
+             this.top    > area.bottom ||
+             this.bottom < area.top)
   }
 }
 
@@ -648,8 +648,8 @@ class Anchor {
 
   applyPos() {
     // Node座標系での位置
-    const localX = this.data.relativeX * this.node.width()
-    const localY = this.data.relativeY * this.node.height()
+    const localX = this.data.relativeX * this.node.width
+    const localY = this.data.relativeY * this.node.height
     
     this.element.setAttribute('x', localX - ANCHOR_WIDTH/2)
     this.element.setAttribute('y', localY - ANCHOR_WIDTH/2)
@@ -664,66 +664,66 @@ class Anchor {
   }
 
   // global座標系での中心位置
-  x() {
-    const localX = this.data.relativeX * this.node.width()
-    return this.node.left() + localX
+  get x() {
+    const localX = this.data.relativeX * this.node.width
+    return this.node.left + localX
   }
 
-  y() {
-    const localY = this.data.relativeY * this.node.height()
-    return this.node.top() + localY
+  get y() {
+    const localY = this.data.relativeY * this.node.height
+    return this.node.top + localY
   }
 
   containsPos(x, y) {
     // 範囲判定に少し余裕を持たせた
     const hitWidth = ANCHOR_WIDTH + 2
     
-    const left = this.x() - hitWidth/2
-    const top  = this.y() - hitWidth/2
+    const left = this.x - hitWidth/2
+    const top  = this.y - hitWidth/2
     return (x >= left) && (x <= left + hitWidth) && (y >= top) && (y <= top + hitWidth)
   }
 
   onDragStart() {
     if(this.data.left) {
-      this.startLeft = this.node.left()
+      this.startLeft = this.node.left
     }
     if(this.data.right) {
-      this.startRight = this.node.right()
+      this.startRight = this.node.right
     }
     if(this.data.top) {
-      this.startTop = this.node.top()
+      this.startTop = this.node.top
     }
     if(this.data.bottom) {
-      this.startBottom = this.node.bottom()
+      this.startBottom = this.node.bottom
     }
   }
 
   onDrag(dx, dy) {
     if(this.data.left) {
       let left = this.startLeft + dx
-      if(left > this.node.right()) {
-        left = this.node.right()
+      if(left > this.node.right) {
+        left = this.node.right
       }
       this.node.setLeft(left)
     }
     if(this.data.right) {
       let right = this.startRight + dx
-      if(right < this.node.left()) {
-        right = this.node.left()
+      if(right < this.node.left) {
+        right = this.node.left
       }
       this.node.setRight(right)
     }
     if(this.data.top) {
       let top = this.startTop + dy
-      if(top > this.node.bottom()) {
-        top = this.node.bottom()
+      if(top > this.node.bottom) {
+        top = this.node.bottom
       }
       this.node.setTop(top)
     }
     if(this.data.bottom) {
       let bottom = this.startBottom + dy
-      if(bottom < this.node.top()) {
-        bottom = this.node.top()
+      if(bottom < this.node.top) {
+        bottom = this.node.top
       }
       this.node.setBottom(bottom)
     }
@@ -831,32 +831,32 @@ class RectNode {
     this.applyPos()
   }
 
-  width() {
+  get width() {
     return this.data.width
   }
 
-  height() {
+  get height() {
     return this.data.height
   }  
 
-  left() {
+  get left() {
     return this.data.x
   }
 
-  right() {
-    return this.left() + this.width()
+  get right() {
+    return this.left + this.width
   }
 
-  top() {
+  get top() {
     return this.data.y
   }
 
-  bottom() {
-    return this.top() + this.height()
+  get bottom() {
+    return this.top + this.height
   }
 
-  area() {
-    return new Area(this.left(), this.top(), this.width(), this.height())
+  get area() {
+    return new Area(this.left, this.top, this.width, this.height)
   }
 
   setLeft(left) {
@@ -866,7 +866,7 @@ class RectNode {
   }
 
   setRight(right) {
-    const dx = right - this.right()
+    const dx = right - this.right
     this.data.width += dx
   }
 
@@ -877,7 +877,7 @@ class RectNode {
   }
 
   setBottom(bottom) {
-    const dy = bottom - this.bottom()
+    const dy = bottom - this.bottom
     this.data.height += dy
   }
 
@@ -891,7 +891,7 @@ class RectNode {
 
   areaSize() {
     // 面積を返す
-    return this.width() * this.height()
+    return this.width * this.height
   }
 }
 
@@ -944,11 +944,11 @@ class NoteManager {
 
     if(this.lastNode != null) {
       if(asSibling) {
-        x = this.lastNode.right() + 30
-        y = this.lastNode.top()
+        x = this.lastNode.right + 30
+        y = this.lastNode.top
       } else {
-        x = this.lastNode.left()
-        y = this.lastNode.bottom() + 10
+        x = this.lastNode.left
+        y = this.lastNode.bottom + 10
       }
     }
 
