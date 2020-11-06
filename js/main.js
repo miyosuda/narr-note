@@ -389,6 +389,8 @@ class AreaSelection {
     this.element.setAttribute('y', minY)
     this.element.setAttribute('width',  width)
     this.element.setAttribute('height', height)
+
+    return new Area(minX, minY, width, height)
   }
 
   onDragEnd() {
@@ -431,6 +433,10 @@ class TextNode {
   containsPosOnAnchor(x, y) {
     return null
   }
+
+  overlaps(area) {
+    return area.overlapsWithArea(this.area())
+  }  
 
   prepare() {
     render(this.data.text, this.foreignObject)
@@ -485,6 +491,10 @@ class TextNode {
     return this.foreignObject.height.baseVal.value
   }
 
+  area() {
+    return new Area(this.left(), this.top(), this.width(), this.height())
+  }
+
   remove() {
     this.foreignObject.remove()
   }
@@ -493,7 +503,7 @@ class TextNode {
     return this.selected
   }
 
-  area() {
+  areaSize() {
     // 面積を返す
     return this.width() * this.height()
   }
@@ -583,7 +593,33 @@ const rectAnchorData = [
 ]
 
 
+class Area {
+  constructor(left, top, width, height) {
+    this.left = left
+    this.top = top
+    this.width = width
+    this.height = height
+  }
+
+  right() {
+    return this.left + this.width
+  }
+
+  bottom() {
+    return this.top + this.height
+  }  
+
+  overlapsWithArea(area) {
+    return !(this.right()  < area.left     ||
+             this.left     > area.right()  ||
+             this.top      > area.bottom() ||
+             this.bottom() < area.top)
+  }
+}
+
+
 const ANCHOR_WIDTH = 5
+
 
 class Anchor {
   constructor(node, data) {
@@ -755,6 +791,10 @@ class RectNode {
     return null
   }
 
+  overlaps(area) {
+    return area.overlapsWithArea(this.area())
+  }
+
   setSelected(selected) {
     this.selected = selected
     this.anchors.forEach(anchor => {
@@ -778,7 +818,7 @@ class RectNode {
     this.anchors.forEach(anchor => {
       anchor.applyPos()
     })    
-  }  
+  }
 
   onDragStart() {
     this.startElementX = this.data.x
@@ -815,6 +855,10 @@ class RectNode {
     return this.top() + this.height()
   }
 
+  area() {
+    return new Area(this.left(), this.top(), this.width(), this.height())
+  }
+
   setLeft(left) {
     const dx = left - this.data.x
     this.data.x = left
@@ -845,7 +889,7 @@ class RectNode {
     return this.selected
   }
 
-  area() {
+  areaSize() {
     // 面積を返す
     return this.width() * this.height()
   }
@@ -997,7 +1041,7 @@ class NoteManager {
     if( pickNodeCandidates.length > 0 ) {
       pickNodeCandidates.sort((node0, node1) => {
         // 面積が小さい方を優先
-        return node0.area() - node1.area()
+        return node0.areaSize() - node1.areaSize()
       })
       pickNode = pickNodeCandidates[0]
     }
@@ -1024,7 +1068,7 @@ class NoteManager {
       } else {
         if( node != pickNode ) {
           // 選択済みだった場合に選択状態をクリア
-          node.setSelected(false)          
+          node.setSelected(false)
         }
       }
     }
@@ -1072,15 +1116,37 @@ class NoteManager {
       const dy = y - this.dragStartY
 
       if( this.areaSelection.isShown() ) {
-        this.areaSelection.onDrag(x, y)
-      }   
-      
-      if( this.selectedAnchor != null ) {
-        this.selectedAnchor.onDrag(dx, dy)
+        const addingSelection = e.shiftKey
+        
+        const area = this.areaSelection.onDrag(x, y)
+
+        for(let i=0; i<this.nodes.length; i++) {
+          const node = this.nodes[i]
+          if( node.overlaps(area) ) {
+            // 選択済に追加
+            if( !node.isSelected() ) {
+              this.selectedNodes.push(node)
+              node.setSelected(true)
+            }
+          } else if(!addingSelection) {
+            if( node.isSelected() ) {
+              // 選択済から削除
+              const nodeIndex = this.selectedNodes.indexOf(node)
+              if(nodeIndex >= 0) {
+                this.selectedNodes.splice(nodeIndex, 1)
+              }
+              node.setSelected(false)
+            }
+          }
+        }
       } else {
-        this.selectedNodes.forEach(node => {
+        if( this.selectedAnchor != null ) {
+          this.selectedAnchor.onDrag(dx, dy)
+        } else {
+          this.selectedNodes.forEach(node => {
           node.onDrag(dx, dy)
-        })
+          })
+        }
       }
     }
   }
