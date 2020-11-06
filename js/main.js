@@ -347,6 +347,60 @@ class TextInput {
 }
 
 
+class AreaSelection {
+  constructor(noteManager) {
+    this.noteManager = noteManager
+    this.element = document.getElementById('areaSelection')
+
+    this.hide()
+  }
+
+  show() {
+    this.shown = true
+    this.element.setAttribute('visibility', 'visible')
+  }
+
+  hide() {
+    this.shown = false
+    this.element.setAttribute('visibility', 'hidden')
+  }
+
+  onDragStart(x, y) {
+    this.startX = x
+    this.startY = y
+
+    this.element.setAttribute('x', x)
+    this.element.setAttribute('y', y)
+    this.element.setAttribute('width',  0)
+    this.element.setAttribute('height', 0)
+    
+    this.show()
+  }
+
+  onDrag(x, y) {
+    const minX = this.startX < x ? this.startX : x
+    const maxX = this.startX < x ? x           : this.startX
+    const minY = this.startY < y ? this.startY : y
+    const maxY = this.startY < y ? y           : this.startY
+    const width  = maxX - minX
+    const height = maxY - minY
+
+    this.element.setAttribute('x', minX)
+    this.element.setAttribute('y', minY)
+    this.element.setAttribute('width',  width)
+    this.element.setAttribute('height', height)
+  }
+
+  onDragEnd() {
+    this.hide()
+  }
+
+  isShown() {
+    return this.shown
+  }
+}
+
+
 class TextNode {
   constructor(data) {
     this.data = data
@@ -828,6 +882,7 @@ class NoteManager {
 
     this.lastNode = null
     this.textInput = new TextInput()
+    this.areaSelection = new AreaSelection()
   }
 
   clearSelection() {
@@ -982,11 +1037,20 @@ class NoteManager {
       this.isMouseDown = true
       this.dragStartX = x
       this.dragStartY = y      
+    } else {
+      this.isMouseDown = true
+      this.dragStartX = x
+      this.dragStartY = y
+      this.areaSelection.onDragStart(x, y)
     }
   }
 
   onMouseUp(e) {
     this.isMouseDown = false
+
+    if( this.areaSelection.isShown() ) {
+      this.areaSelection.onDragEnd()
+    }
 
     if( this.selectedAnchor != null ) {
       this.selectedAnchor.hide()
@@ -1005,7 +1069,11 @@ class NoteManager {
       const x = pos.x
       const y = pos.y
       const dx = x - this.dragStartX
-      const dy = y - this.dragStartY 
+      const dy = y - this.dragStartY
+
+      if( this.areaSelection.isShown() ) {
+        this.areaSelection.onDrag(x, y)
+      }   
       
       if( this.selectedAnchor != null ) {
         this.selectedAnchor.onDrag(dx, dy)
