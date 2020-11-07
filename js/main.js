@@ -1,6 +1,7 @@
 
 const NODE_TYPE_TEXT = 1
 const NODE_TYPE_RECT = 2
+const NODE_TYPE_LINE = 3
 
 
 class NodeData {
@@ -30,9 +31,18 @@ class NodeData {
       // TODO: width, heightが元々設定されていた場合の対応
       this.width = 50
       this.height = 50
-    } else {
-      this.type = NODE_TYPE_TEXT
+      return
     }
+
+    // TODO: lineのpattern matching
+    if( text == "---" ) {
+      this.type = NODE_TYPE_LINE
+      this.width = 100
+      this.height = 0
+      return
+    }
+    
+    this.type = NODE_TYPE_TEXT
   }
 }
 
@@ -519,6 +529,7 @@ const rectAnchorData = [
     right  : false,
     bottom : false,
     cursor : 'nw-resize',
+    allowMinusWH : false,
   },
   // 上
   {
@@ -529,6 +540,7 @@ const rectAnchorData = [
     right  : false,
     bottom : false,
     cursor : 'n-resize',
+    allowMinusWH : false,
   },
   // 右上
   {
@@ -539,6 +551,7 @@ const rectAnchorData = [
     right  : true,
     bottom : false,
     cursor : 'ne-resize',
+    allowMinusWH : false,
   },
   // 右
   {
@@ -549,6 +562,7 @@ const rectAnchorData = [
     right  : true,
     bottom : false,
     cursor : 'e-resize',
+    allowMinusWH : false,
   },
   // 右下
   {
@@ -559,6 +573,7 @@ const rectAnchorData = [
     right  : true,
     bottom : true,
     cursor : 'se-resize',
+    allowMinusWH : false,
   },
   // 下
   {
@@ -569,6 +584,7 @@ const rectAnchorData = [
     right  : false,
     bottom : true,
     cursor : 's-resize',
+    allowMinusWH : false,
   },
   // 左下
   {
@@ -579,6 +595,7 @@ const rectAnchorData = [
     right  : false,
     bottom : true,
     cursor : 'sw-resize',
+    allowMinusWH : false,
   },
   // 左  
   {
@@ -589,6 +606,33 @@ const rectAnchorData = [
     right  : false,
     bottom : false,
     cursor : 'w-resize',
+    allowMinusWH : false,
+  },
+]
+
+
+const lineAnchorData = [
+  // x1,y1
+  {
+    relativeX : 0.0,
+    relativeY : 0.0,
+    left   : true,
+    top    : true,
+    right  : false,
+    bottom : false,
+    cursor : 'nw-resize',
+    allowMinusWH : true,
+  },
+  // x2,y2
+  {
+    relativeX : 1.0,
+    relativeY : 1.0,
+    left   : false,
+    top    : false,
+    right  : true,
+    bottom : true,
+    cursor : 'se-resize',
+    allowMinusWH : true,
   },
 ]
 
@@ -701,29 +745,37 @@ class Anchor {
   onDrag(dx, dy) {
     if(this.data.left) {
       let left = this.startLeft + dx
-      if(left > this.node.right) {
-        left = this.node.right
+      if(!this.data.allowMinusWH) {
+        if(left > this.node.right) {
+          left = this.node.right
+        }
       }
       this.node.setLeft(left)
     }
     if(this.data.right) {
       let right = this.startRight + dx
-      if(right < this.node.left) {
-        right = this.node.left
+      if(!this.data.allowMinusWH) {
+        if(right < this.node.left) {
+          right = this.node.left
+        }
       }
       this.node.setRight(right)
     }
     if(this.data.top) {
       let top = this.startTop + dy
-      if(top > this.node.bottom) {
-        top = this.node.bottom
+      if(!this.data.allowMinusWH) {
+        if(top > this.node.bottom) {
+          top = this.node.bottom
+        }
       }
       this.node.setTop(top)
     }
     if(this.data.bottom) {
       let bottom = this.startBottom + dy
-      if(bottom < this.node.top) {
-        bottom = this.node.top
+      if(!this.data.allowMinusWH) {
+        if(bottom < this.node.top) {
+          bottom = this.node.top
+        }
       }
       this.node.setBottom(bottom)
     }
@@ -792,7 +844,7 @@ class RectNode {
   }
 
   overlaps(area) {
-    return area.overlapsWithArea(this.area())
+    return area.overlapsWithArea(this.area)
   }
 
   setSelected(selected) {
@@ -896,11 +948,175 @@ class RectNode {
 }
 
 
+class LineNode {
+  constructor(data) {
+    this.data = data
+    
+    let ns = 'http://www.w3.org/2000/svg'
+    let element = document.createElementNS(ns, 'g')
+    this.element = element
+
+    this.applyPos()
+    
+    let innerElement = document.createElementNS(ns, 'line')
+    this.innerElement = innerElement   
+    
+    innerElement.setAttribute('x1', 0)
+    innerElement.setAttribute('y1', 0)
+    innerElement.setAttribute('stroke', 'black')
+    element.appendChild(innerElement)
+
+    this.anchors = []
+    for(let i=0; i<lineAnchorData.length; i++) {
+      const anchor = new Anchor(this, lineAnchorData[i])
+      this.anchors.push(anchor)
+    }
+    
+    this.applyWH()
+    
+    let g = document.getElementById('nodes')
+    g.appendChild(element)
+    
+    this.selected = false
+  }
+
+  containsPos(x, y) {
+    // TODO: 点から線分までの距離で判定
+    return false
+  }
+
+  containsPosOnAnchor(x, y) {
+    if(!this.selected) {
+      return null
+    }
+    
+    for(let i=0; i<this.anchors.length; i++) {
+      const anchor = this.anchors[i]
+      if(anchor.containsPos(x, y)) {
+        return anchor
+      }
+    }
+    return null
+  }
+
+  overlaps(area) {
+    // TODO: lineとareaのcollision判定処理
+    return false
+  }
+
+  setSelected(selected) {
+    this.selected = selected
+    this.anchors.forEach(anchor => {
+      if(selected) {
+        anchor.show()
+      } else {
+        anchor.hide()
+      }
+    })
+  }
+
+  applyPos() {
+    this.element.setAttribute('transform',
+                              'translate(' + this.data.x + ',' + this.data.y + ')')
+  }
+
+  applyWH() {
+    this.innerElement.setAttribute('x2', this.data.width)
+    this.innerElement.setAttribute('y2', this.data.height)
+    
+    this.anchors.forEach(anchor => {
+      anchor.applyPos()
+    })
+  }
+
+  onDragStart() {
+    this.startElementX = this.data.x
+    this.startElementY = this.data.y
+  }
+
+  onDrag(dx, dy) {
+    this.data.x = this.startElementX + dx
+    this.data.y = this.startElementY + dy
+    this.applyPos()
+  }
+
+  get width() {
+    return this.data.width
+  }
+
+  get height() {
+    return this.data.height
+  } 
+
+  get left() {
+    return this.data.x
+  }
+
+  get right() {
+    return this.left + this.width
+  }
+
+  get top() {
+    return this.data.y
+  }
+
+  get bottom() {
+    return this.top + this.height
+  }
+
+  /*
+  get area() {
+    return new Area(this.left, this.top, this.width, this.height)
+  }
+  */
+
+  setLeft(left) {
+    const dx = left - this.data.x
+    this.data.x = left
+    this.data.width -= dx
+  }
+
+  setRight(right) {
+    const dx = right - this.right
+    this.data.width += dx
+  }
+
+  setTop(top) {
+    const dy = top - this.data.y
+    this.data.y = top
+    this.data.height -= dy
+  }
+
+  setBottom(bottom) {
+    const dy = bottom - this.bottom
+    this.data.height += dy
+  }
+
+  remove() {
+    this.element.remove()
+  }
+
+  isSelected() {
+    return this.selected
+  }
+
+  areaSize() {
+    // 面積を返す
+    //return this.width * this.height
+    // TODO:
+    return 0
+  }
+}
+
+
+
 const createNode = (data) => {
   if( data.type == NODE_TYPE_TEXT ) {
     return new TextNode(data)
   } else if( data.type == NODE_TYPE_RECT ) {
     return new RectNode(data)
+  } else if( data.type == NODE_TYPE_LINE ) {
+    return new LineNode(data)
   } else {
     return null
   }
