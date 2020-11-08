@@ -1208,6 +1208,7 @@ class NoteManager {
     this.selectedNodes = []
     this.selectedAnchor = null
     this.nodes = []
+    this.nodeEditied = false
   }
 
   prepare() {
@@ -1250,16 +1251,23 @@ class NoteManager {
   }
 
   deleteSelectedNodes() {
+    let deleted = false
+    
     this.selectedNodes.forEach(node => {
       // ノードを削除
-      // TODO: mouseUp時のundoバッファ対応
       const nodeIndex = this.nodes.indexOf(node)
       if(nodeIndex >= 0) {
         this.nodes.splice(nodeIndex, 1)
       }
       node.remove()
+      deleted = true
     })
     this.seletedNodes = []
+
+    if( deleted ) {
+      // undoバッファ対応
+      this.storeState()
+    }
   }
 
   getLocalPos(e) {
@@ -1297,6 +1305,8 @@ class NoteManager {
   }
 
   onMouseDown(e) {
+    this.nodeEditied = false
+    
     const pos = this.getLocalPos(e)
     const x = pos.x
     const y = pos.y
@@ -1406,6 +1416,12 @@ class NoteManager {
         node.setSelected(true)
       })
     }
+
+    if( this.nodeEditied ) {
+      // undoバッファ対応
+      this.storeState()
+      this.nodeEditied = false
+    }
   }
 
   onMouseMove(e) {
@@ -1445,13 +1461,15 @@ class NoteManager {
       } else {
         if( this.selectedAnchor != null ) {
           // アンカーを移動
-          // TODO: mouseUp時のundoバッファ対応
           this.selectedAnchor.onDrag(dx, dy)
+          // mouseUp時にundoバッファ対応
+          this.nodeEditied = true
         } else {
           this.selectedNodes.forEach(node => {
             // ノードを移動
-            // TODO: mouseUp時のundoバッファ対応
             node.onDrag(dx, dy)
+            // mouseUp時にundoバッファ対応
+            this.nodeEditied = true
           })
         }
       }
@@ -1468,9 +1486,10 @@ class NoteManager {
       let node = this.nodes[i]
       if( node.containsPos(x, y) ) {
         this.textInput.show(node.data)
-        // TODO: undoバッファ対応
         this.nodes.splice(i, 1)
         node.remove()
+        // undoバッファ対応
+        this.storeState()
         break
       }
     }
@@ -1478,10 +1497,11 @@ class NoteManager {
 
   onTextDecided(data) {
     // 新規にノードを追加
-    // TODO: undoバッファ対応
     const node = createNode(data)
     this.lastNode = node
     this.nodes.push(node)
+    // undoバッファ対応
+    this.storeState()
   }
 
   duplicateSelectedNodes() {
@@ -1493,11 +1513,12 @@ class NoteManager {
       newData.y += 10
 
       // 新規にノードを追加
-      // TODO: undoバッファ対応
       const newNode = createNode(newData)
       duplicatedNodes.push(newNode)
       this.lastNode = newNode
       this.nodes.push(newNode)
+      // undoバッファ対応
+      this.storeState()
     })
 
     this.clearSelection()
@@ -1517,6 +1538,10 @@ class NoteManager {
     // TODO: 未実装
     console.log('redo')
   }
+
+  storeState() {
+    // TODO: 未実装
+  }
 }
 
 let noteManager = new NoteManager()
@@ -1524,6 +1549,3 @@ let noteManager = new NoteManager()
 window.onload = () => {
   noteManager.prepare()
 }
-
-
-
