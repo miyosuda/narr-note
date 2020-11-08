@@ -47,6 +47,35 @@ class NodeData {
 }
 
 
+const calcDistanceToLineSegment = (x, y, x0, y0, x1, y1) => {
+  const a = x1 - x0
+  const b = y1 - y0
+  const a2 = a * a
+  const b2 = b * b
+  const r2 = a2 + b2
+  const t = -(a * (x0 - x) + b * (y0 - y))
+
+  if( t < 0 ) {
+    const dx = x0 - x
+    const dy = y0 - y
+    return Math.sqrt(dx*dx + dy*dy)
+  } else if( t > r2 ) {
+    const dx = x1 - x
+    const dy = y1 - y
+    return Math.sqrt(dx*dx + dy*dy)
+  }
+  const f = a * (y0 - y) - b * (x0 - x)
+  return Math.sqrt((f * f) / r2)
+}
+
+
+const checkLineSegmentLineSegmentCollision = (x0, y0, x1, y1, x2, y2, x3, y3) => {
+  const ua = ((x3-x2)*(y0-y2) - (y3-y2)*(x0-x2)) / ((y3-y2)*(x1-x0) - (x3-x2)*(y1-y0))
+  const ub = ((x1-x0)*(y0-y2) - (y1-y0)*(x0-x2)) / ((y3-y2)*(x1-x0) - (x3-x2)*(y1-y0))
+  return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1)
+}
+
+
 const clone = (instance) => {
   return Object.assign(
     Object.create(
@@ -432,12 +461,14 @@ class TextNode {
   }
 
   containsPos(x, y) {
+    /*
     const left   = this.foreignObject.x.baseVal.value
     const top    = this.foreignObject.y.baseVal.value
     const width  = this.foreignObject.width.baseVal.value
     const height = this.foreignObject.height.baseVal.value
-
     return (x >= left) && (x <= left+width) && (y >= top) && (y <= top+height)
+    */
+    return (x >= this.left) && (x <= this.right) && (y >= this.top) && (y <= this.bottom)
   }
 
   containsPosOnAnchor(x, y) {
@@ -651,13 +682,36 @@ class Area {
 
   get bottom() {
     return this.top + this.height
-  }  
+  }
 
   overlapsWithArea(area) {
     return !(this.right  < area.left   ||
              this.left   > area.right  ||
              this.top    > area.bottom ||
              this.bottom < area.top)
+  }
+
+  overlapsWithLine(x0, y0, x1, y1) {
+    const hitTop = checkLineSegmentLineSegmentCollision(this.left, this.top, this.right, this.top,
+                                                        x0, y0, x1, y1)
+    if(hitTop) { return true }
+    
+    const hitBottom = checkLineSegmentLineSegmentCollision(this.left, this.bottom, this.right, this.bottom,
+                                                           x0, y0, x1, y1)
+    if(hitBottom) { return true }
+
+    const hitLeft = checkLineSegmentLineSegmentCollision(this.left, this.top, this.left, this.bottom,
+                                                         x0, y0, x1, y1)
+    if(hitLeft) { return true }
+
+    const hitRight = checkLineSegmentLineSegmentCollision(this.right, this.top, this.right, this.bottom,
+                                                          x0, y0, x1, y1)
+    if(hitRight) { return true }
+    return false
+  }
+
+  containsPos(x, y) {
+    return (x >= this.left) && (x <= this.right) && (y >= this.top) && (y <= this.bottom)
   }
 }
 
@@ -948,12 +1002,14 @@ class RectNode {
 }
 
 
+const LINE_HIT_DISTANCE = 5.0
+
 class LineNode {
   constructor(data) {
     this.data = data
     
     let ns = 'http://www.w3.org/2000/svg'
-    let element = document.createElementNS(ns, 'g')
+    let element = document.createElementNS(ns, 'g')    
     this.element = element
 
     this.applyPos()
@@ -964,6 +1020,8 @@ class LineNode {
     innerElement.setAttribute('x1', 0)
     innerElement.setAttribute('y1', 0)
     innerElement.setAttribute('stroke', 'black')
+    innerElement.setAttribute('stroke-width', 1.5)
+    //innerElement.setAttribute('stroke-dasharray', "4,4") //..
     element.appendChild(innerElement)
 
     this.anchors = []
@@ -981,8 +1039,10 @@ class LineNode {
   }
 
   containsPos(x, y) {
-    // TODO: 点から線分までの距離で判定
-    return false
+    const d = calcDistanceToLineSegment(x, y,
+                                        this.left, this.top,
+                                        this.right, this.bottom)
+    return( d <= LINE_HIT_DISTANCE && d >= -LINE_HIT_DISTANCE )
   }
 
   containsPosOnAnchor(x, y) {
@@ -1000,7 +1060,15 @@ class LineNode {
   }
 
   overlaps(area) {
-    // TODO: lineとareaのcollision判定処理
+    if( area.overlapsWithLine(this.left, this.top, this.right, this.bottom) ) {
+      // 4辺とlineが交差している場合
+      return true
+    }
+    if( area.containsPos(this.left, this.top) &&
+        area.containsPos(this.right, this.bottom) ) {
+      // 起点と終点が共にarea内の場合
+      return true
+    }
     return false
   }
 
@@ -1048,18 +1116,22 @@ class LineNode {
     return this.data.height
   } 
 
+  // 起点のx
   get left() {
     return this.data.x
   }
 
+  // 終点のx
   get right() {
     return this.left + this.width
   }
 
+  // 起点のy
   get top() {
     return this.data.y
   }
 
+  // 終点のy
   get bottom() {
     return this.top + this.height
   }
@@ -1422,3 +1494,6 @@ let noteManager = new NoteManager()
 window.onload = () => {
   noteManager.prepare()
 }
+
+
+
