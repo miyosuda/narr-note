@@ -1,4 +1,5 @@
 
+const NODE_TYPE_NONE = 0
 const NODE_TYPE_TEXT = 1
 const NODE_TYPE_RECT = 2
 const NODE_TYPE_LINE = 3
@@ -6,7 +7,7 @@ const NODE_TYPE_LINE = 3
 
 class NodeData {
   constructor(x, y, text) {
-    this.type = NODE_TYPE_TEXT
+    this.type = NODE_TYPE_NONE
     this.x = x
     this.y = y
     this.text = text
@@ -37,6 +38,7 @@ class NodeData {
     // TODO: lineのpattern matching
     if( text == "---" ) {
       this.type = NODE_TYPE_LINE
+      // TODO: width, heightが元々設定されていた場合の対応
       this.width = 100
       this.height = 0
       return
@@ -1015,7 +1017,7 @@ class LineNode {
     this.applyPos()
     
     let innerElement = document.createElementNS(ns, 'line')
-    this.innerElement = innerElement   
+    this.innerElement = innerElement
     
     innerElement.setAttribute('x1', 0)
     innerElement.setAttribute('y1', 0)
@@ -1175,10 +1177,11 @@ class LineNode {
   }
 
   areaSize() {
-    // 面積を返す
-    //return this.width * this.height
-    // TODO:
-    return 0
+    const dx = this.right - this.left
+    const dy = this.bottom - this.top
+    const length = Math.sqrt(dx * dx + dy * dy)
+    // コリジョン距離を元に面積としている
+    return length * LINE_HIT_DISTANCE * 2.0
   }
 }
 
@@ -1248,6 +1251,8 @@ class NoteManager {
 
   deleteSelectedNodes() {
     this.selectedNodes.forEach(node => {
+      // ノードを削除
+      // TODO: mouseUp時のundoバッファ対応
       const nodeIndex = this.nodes.indexOf(node)
       if(nodeIndex >= 0) {
         this.nodes.splice(nodeIndex, 1)
@@ -1284,6 +1289,10 @@ class NoteManager {
       this.deleteSelectedNodes()
     } else if(e.key === 'd' && e.ctrlKey) {
       this.duplicateSelectedNodes()
+    } else if(e.key === 'z' && e.ctrlKey) {
+      this.undo()
+    } else if(e.key === 'Z' && e.ctrlKey) {
+      this.redo()
     }
   }
 
@@ -1435,10 +1444,14 @@ class NoteManager {
         }
       } else {
         if( this.selectedAnchor != null ) {
+          // アンカーを移動
+          // TODO: mouseUp時のundoバッファ対応
           this.selectedAnchor.onDrag(dx, dy)
         } else {
           this.selectedNodes.forEach(node => {
-          node.onDrag(dx, dy)
+            // ノードを移動
+            // TODO: mouseUp時のundoバッファ対応
+            node.onDrag(dx, dy)
           })
         }
       }
@@ -1455,6 +1468,7 @@ class NoteManager {
       let node = this.nodes[i]
       if( node.containsPos(x, y) ) {
         this.textInput.show(node.data)
+        // TODO: undoバッファ対応
         this.nodes.splice(i, 1)
         node.remove()
         break
@@ -1463,6 +1477,8 @@ class NoteManager {
   }
 
   onTextDecided(data) {
+    // 新規にノードを追加
+    // TODO: undoバッファ対応
     const node = createNode(data)
     this.lastNode = node
     this.nodes.push(node)
@@ -1476,6 +1492,8 @@ class NoteManager {
       newData.x += 10
       newData.y += 10
 
+      // 新規にノードを追加
+      // TODO: undoバッファ対応
       const newNode = createNode(newData)
       duplicatedNodes.push(newNode)
       this.lastNode = newNode
@@ -1488,6 +1506,16 @@ class NoteManager {
     this.selectedNodes.forEach(node => {
       node.setSelected(true)
     })
+  }
+
+  undo() {
+    // TODO: 未実装
+    console.log('undo')
+  }
+
+  redo() {
+    // TODO: 未実装
+    console.log('redo')
   }
 }
 
