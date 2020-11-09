@@ -1251,11 +1251,7 @@ class NoteManager {
     
     this.selectedNodes.forEach(node => {
       // ノードを削除
-      const nodeIndex = this.nodes.indexOf(node)
-      if(nodeIndex >= 0) {
-        this.nodes.splice(nodeIndex, 1)
-      }
-      node.remove()
+      this.removeNode(node)
       deleted = true
     })
     this.seletedNodes = []
@@ -1477,13 +1473,12 @@ class NoteManager {
     const x = pos.x
     const y = pos.y
 
-    for(let i=0; i<this.nodes.length; i++) {
+    for(let i=this.nodes.length-1; i>=0; i--) {
       // 最初に見つけたらそこでloopを抜ける
       let node = this.nodes[i]
       if( node.containsPos(x, y) ) {
-        this.textInput.show(node.data)
-        this.nodes.splice(i, 1)
-        node.remove()
+        this.textInput.show(node.data)        
+        this.removeNode(node)
         // undoバッファ対応
         this.storeState()
         break
@@ -1493,9 +1488,17 @@ class NoteManager {
 
   addNode(nodeData) {
     const node = createNode(nodeData)
-    this.lastNode = node
     this.nodes.push(node)
+    this.lastNode = node    
     return node
+  }
+
+  removeNode(node) {
+      const nodeIndex = this.nodes.indexOf(node)
+      if(nodeIndex >= 0) {
+        this.nodes.splice(nodeIndex, 1)
+      }
+      node.remove()
   }
 
   onTextDecided(data) {
