@@ -19,7 +19,6 @@ class NodeData {
     const rectPattern = /^\[(\d+)\]$/
     const rectMatchResult = text.match(rectPattern)
     if( rectMatchResult != null ) {
-      this.type = NODE_TYPE_RECT
       // TODO: カラーの対応
       const rectColorId = rectMatchResult[1]
       if( rectColorId == 0 ) {
@@ -29,18 +28,22 @@ class NodeData {
       } else {
         this.color = "#0000FF"
       }
-      // TODO: width, heightが元々設定されていた場合の対応
-      this.width = 50
-      this.height = 50
+      
+      if( this.type != NODE_TYPE_RECT ) {
+        this.width = 50
+        this.height = 50
+      }
+      this.type = NODE_TYPE_RECT
       return
     }
 
     // TODO: lineのpattern matching
     if( text == "---" ) {
+      if( this.type != NODE_TYPE_LINE ) {
+        this.width = 100
+        this.height = 0
+      }
       this.type = NODE_TYPE_LINE
-      // TODO: width, heightが元々設定されていた場合の対応
-      this.width = 100
-      this.height = 0
       return
     }
     
@@ -463,13 +466,6 @@ class TextNode {
   }
 
   containsPos(x, y) {
-    /*
-    const left   = this.foreignObject.x.baseVal.value
-    const top    = this.foreignObject.y.baseVal.value
-    const width  = this.foreignObject.width.baseVal.value
-    const height = this.foreignObject.height.baseVal.value
-    return (x >= left) && (x <= left+width) && (y >= top) && (y <= top+height)
-    */
     return (x >= this.left) && (x <= this.right) && (y >= this.top) && (y <= this.bottom)
   }
 
@@ -1495,17 +1491,25 @@ class NoteManager {
     }
   }
 
-  onTextDecided(data) {
-    // 新規にノードを追加
-    const node = createNode(data)
+  addNode(nodeData) {
+    const node = createNode(nodeData)
     this.lastNode = node
     this.nodes.push(node)
+    return node
+  }
+
+  onTextDecided(data) {
+    // TODO: テキストが空文字ならばノードを追加しない
+    // 新規にノードを追加
+    this.addNode(data)
     // undoバッファ対応
     this.storeState()
   }
 
   duplicateSelectedNodes() {
     const duplicatedNodes = []
+
+    let duplicated = false
     
     this.selectedNodes.forEach(node => {
       const newData = clone(node.data)
@@ -1513,16 +1517,20 @@ class NoteManager {
       newData.y += 10
 
       // 新規にノードを追加
-      const newNode = createNode(newData)
+      const newNode = this.addNode(newData)
       duplicatedNodes.push(newNode)
-      this.lastNode = newNode
-      this.nodes.push(newNode)
+      duplicated = true
+    })
+    
+    if( duplicated ) {
       // undoバッファ対応
       this.storeState()
-    })
+    }
 
+    // 選択状態をクリア
     this.clearSelection()
-    
+
+    // 複製ノードを選択状態にしておく
     this.selectedNodes = duplicatedNodes
     this.selectedNodes.forEach(node => {
       node.setSelected(true)
