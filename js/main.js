@@ -94,6 +94,15 @@ const clone = (instance) => {
 }
 
 
+const cloneArray = (array) => {
+  const clonedArray = []
+  array.forEach(obj => {
+    clonedArray.push(clone(obj))
+  })
+  return clonedArray
+}
+
+
 // textノードのサイズを取得
 const getElementDimension = (html) => {
   const element = document.createElement('span')
@@ -1181,7 +1190,7 @@ class LineNode {
   }
 }
 
-const EDIT_HISTORY_MAX = 5
+const EDIT_HISTORY_MAX = 10
 
 
 class EditHistory {
@@ -1192,14 +1201,11 @@ class EditHistory {
   }
 
   addHistory(nodeDatas) {
-    //.. TODO: arrayのclone関数化
-    const clonedNodeDatas = []
-    nodeDatas.forEach(nodeData => {
-      clonedNodeDatas.push(clone(nodeData))
-    })
-    //..
-
-    // TODO: cusorが終端以外の場所にある時の対応
+    const clonedNodeDatas = cloneArray(nodeDatas)
+    if( this.cursor != this.history.length-1 ) {
+      // cursorが終端以外の場所にある時の対応
+      this.history.splice(this.cursor+1, this.history.length-(this.cursor+1))
+    }
     
     this.history.push(clonedNodeDatas)
     this.cursor += 1
