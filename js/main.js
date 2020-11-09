@@ -1181,6 +1181,53 @@ class LineNode {
   }
 }
 
+const EDIT_HISTORY_MAX = 5
+
+
+class EditHistory {
+  constructor() {
+    this.history = new Array()
+    this.cursor = -1
+    this.addHistory([])
+  }
+
+  addHistory(nodeDatas) {
+    //.. TODO: arrayのclone関数化
+    const clonedNodeDatas = []
+    nodeDatas.forEach(nodeData => {
+      clonedNodeDatas.push(clone(nodeData))
+    })
+    //..
+
+    // TODO: cusorが終端以外の場所にある時の対応
+    
+    this.history.push(clonedNodeDatas)
+    this.cursor += 1
+    if( this.history.length > EDIT_HISTORY_MAX ) {
+      this.history.shift()
+      this.cursor -= 1
+    }
+  }
+
+  undo() {
+    if( this.cursor > 0 ) {
+      this.cursor -= 1
+      console.log("undo cursor pos=" + this.cursor)
+      return this.history[this.cursor]
+    } else {
+      return null
+    }
+  }
+
+  redo() {
+    if( this.cursor < this.history.length-1 ) {
+      this.cursor += 1
+      return this.history[this.cursor]
+    } else {
+      return null
+    }
+  }
+}
 
 
 const createNode = (data) => {
@@ -1205,6 +1252,7 @@ class NoteManager {
     this.selectedAnchor = null
     this.nodes = []
     this.nodeEditied = false
+    this.editHistory = new EditHistory()
   }
 
   prepare() {
@@ -1330,7 +1378,7 @@ class NoteManager {
 
     // マウスが乗った物のなから一番小さい物をまずpick対象として選ぶ
     const pickNodeCandidates = []
-    let pickNode = null    
+    let pickNode = null
     
     for(let i=0; i<this.nodes.length; i++) {
       const node = this.nodes[i]
@@ -1486,21 +1534,6 @@ class NoteManager {
     }
   }
 
-  addNode(nodeData) {
-    const node = createNode(nodeData)
-    this.nodes.push(node)
-    this.lastNode = node    
-    return node
-  }
-
-  removeNode(node) {
-      const nodeIndex = this.nodes.indexOf(node)
-      if(nodeIndex >= 0) {
-        this.nodes.splice(nodeIndex, 1)
-      }
-      node.remove()
-  }
-
   onTextDecided(data) {
     // TODO: テキストが空文字ならばノードを追加しない
     // 新規にノードを追加
@@ -1540,20 +1573,55 @@ class NoteManager {
     })
   }
 
+  addNode(nodeData) {
+    const node = createNode(nodeData)
+    this.nodes.push(node)
+    this.lastNode = node
+    return node
+  }
+
+  removeNode(node) {
+      const nodeIndex = this.nodes.indexOf(node)
+      if(nodeIndex >= 0) {
+        this.nodes.splice(nodeIndex, 1)
+      }
+      node.remove()
+  }
+
   undo() {
-    // TODO: 未実装
-    console.log('undo')
+    const nodeDatas = this.editHistory.undo()
+    if( nodeDatas != null ) {
+      this.applyNodeDatas(nodeDatas)
+    }
   }
 
   redo() {
-    // TODO: 未実装
-    console.log('redo')
+    const nodeDatas = this.editHistory.redo()
+    if( nodeDatas != null ) {
+      this.applyNodeDatas(nodeDatas)
+    }
+  }
+
+  applyNodeDatas(nodeDatas) {
+    for(let i=this.nodes.length-1; i>=0; i--) {
+      let node = this.nodes[i]
+      this.removeNode(node)
+    }
+
+    nodeDatas.forEach(nodeData => {
+      this.addNode(nodeData)
+    })
   }
 
   storeState() {
-    // TODO: 未実装
+    const nodeDatas = []
+    this.nodes.forEach(node => {
+      nodeDatas.push(node.data)
+    })
+    this.editHistory.addHistory(nodeDatas)
   }
 }
+
 
 let noteManager = new NoteManager()
 
