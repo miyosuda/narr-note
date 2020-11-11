@@ -1145,12 +1145,6 @@ class LineNode {
     return this.top + this.height
   }
 
-  /*
-  get area() {
-    return new Area(this.left, this.top, this.width, this.height)
-  }
-  */
-
   setLeft(left) {
     const dx = left - this.data.x
     this.data.x = left
@@ -1218,7 +1212,6 @@ class EditHistory {
   undo() {
     if( this.cursor > 0 ) {
       this.cursor -= 1
-      console.log("undo cursor pos=" + this.cursor)
       return this.history[this.cursor]
     } else {
       return null
@@ -1341,13 +1334,27 @@ class NoteManager {
       this.showInput(false)
     } else if(e.key === 'Backspace' ) {
       this.deleteSelectedNodes()
-    } else if(e.key === 'd' && e.ctrlKey) {
+    } else if( (e.key === 'd' && e.ctrlKey) || (e.key === 'd' && e.metaKey) ) {
       this.duplicateSelectedNodes()
-    } else if(e.key === 'z' && e.ctrlKey) {
+      // MacのCommand + Dのデフォルトの挙動を防ぐ
+      e.preventDefault()
+    } else if( (e.key === 'z' && e.ctrlKey) || (e.key === 'z' && e.metaKey && !e.shiftKey) ) {
       this.undo()
-    } else if(e.key === 'Z' && e.ctrlKey) {
+      // MacのCommand + Zのデフォルトの挙動を防ぐ
+      e.preventDefault()
+    } else if( (e.key === 'Z' && e.ctrlKey) || (e.key === 'z' && e.metaKey && e.shiftKey) ) {
       this.redo()
-    }
+      // MacのCommand + Zのデフォルトの挙動を防ぐ
+      e.preventDefault()
+    } else if( (e.key === 's' && e.ctrlKey) || (e.key === 's' && e.metaKey) ) {
+      this.save()
+      // MacのCommand + sのデフォルトの挙動を防ぐ
+      e.preventDefault()
+    } else if( (e.key === 'o' && e.ctrlKey) || (e.key === 'o' && e.metaKey) ) {
+      this.load()
+      // MacのCommand + oのデフォルトの挙動を防ぐ
+      e.preventDefault()
+    }    
   }
 
   onMouseDown(e) {
@@ -1626,6 +1633,52 @@ class NoteManager {
     })
     this.editHistory.addHistory(nodeDatas)
   }
+
+  save() {
+    const DATA_VERSION = 1
+    
+    const nodeDatas = []
+    this.nodes.forEach(node => {
+      nodeDatas.push(node.data)
+    })
+    const data = {
+      'version': DATA_VERSION,
+      'nodes': nodeDatas,
+    }
+    const json = JSON.stringify(data)
+    
+    let blob = new Blob([json], {type: 'application/json'})
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob)
+    document.body.appendChild(a) // Firefoxで必要
+    // TODO: 日付でファイル名作成
+    a.download = 'out.json'
+    a.click()
+    document.body.removeChild(a) // Firefoxで必要
+    URL.revokeObjectURL(a.href)
+  }
+
+  load() {
+    let input = document.createElement('input')
+    document.body.appendChild(input)
+    input.setAttribute('type', 'file')
+    input.setAttribute('hidden', 'true')
+
+    input.addEventListener('change', event => {
+      const files = event.target.files
+      if( files.length > 0 ) {
+        const reader = new FileReader()
+        reader.readAsText(files[0])
+        reader.onload = () => {
+          const data = JSON.parse(reader.result)
+          const nodeDatas = data.nodes
+          this.applyNodeDatas(nodeDatas)
+        }
+      }
+    })
+    input.click()
+    document.body.removeChild(input)
+  }
 }
 
 
@@ -1634,3 +1687,5 @@ let noteManager = new NoteManager()
 window.onload = () => {
   noteManager.prepare()
 }
+
+
