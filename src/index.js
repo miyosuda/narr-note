@@ -1,3 +1,4 @@
+import katex from 'katex';
 
 const NODE_TYPE_NONE = 0
 const NODE_TYPE_TEXT = 1
@@ -1687,5 +1688,3 @@ let noteManager = new NoteManager()
 window.onload = () => {
   noteManager.prepare()
 }
-
-
