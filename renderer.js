@@ -1,3 +1,4 @@
+const katex = require('katex')
 
 const NODE_TYPE_NONE = 0
 const NODE_TYPE_TEXT = 1
@@ -394,7 +395,7 @@ class TextInput {
     }
     // テキスト入力が完了した
     this.data.setText(value)
-    noteManager.onTextDecided(this.data)
+    this.noteManager.onTextDecided(this.data)
     this.hide()
   }
 }
@@ -1255,6 +1256,8 @@ class NoteManager {
   }
 
   prepare() {
+    this.onResize()
+    
     document.onmousedown = event => this.onMouseDown(event)
     document.onmouseup   = event => this.onMouseUp(event)
     document.onmousemove = event => this.onMouseMove(event)
@@ -1262,7 +1265,7 @@ class NoteManager {
     document.body.addEventListener('dblclick', evenet => this.onDoubleClick(event))
 
     this.lastNode = null
-    this.textInput = new TextInput()
+    this.textInput = new TextInput(this)
     this.areaSelection = new AreaSelection()
   }
 
@@ -1635,6 +1638,7 @@ class NoteManager {
   }
 
   save() {
+    /*
     const DATA_VERSION = 1
     
     const nodeDatas = []
@@ -1656,9 +1660,11 @@ class NoteManager {
     a.click()
     document.body.removeChild(a) // Firefoxで必要
     URL.revokeObjectURL(a.href)
+    */
   }
 
   load() {
+    /*
     let input = document.createElement('input')
     document.body.appendChild(input)
     input.setAttribute('type', 'file')
@@ -1678,14 +1684,24 @@ class NoteManager {
     })
     input.click()
     document.body.removeChild(input)
+    */
+  }
+
+  onResize() {
+    const svg = document.getElementById('svg')
+    svg.setAttribute('width', window.innerWidth)
+    svg.setAttribute('height', window.innerHeight)    
   }
 }
 
 
 let noteManager = new NoteManager()
 
+
 window.onload = () => {
   noteManager.prepare()
 }
 
-
+window.addEventListener( 'resize', () => {
+  noteManager.onResize()
+}, false)
