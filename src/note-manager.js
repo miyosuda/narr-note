@@ -1,4 +1,5 @@
 const fs = require('fs')
+const ipc = require('electron').ipcRenderer
 
 const {NODE_TYPE_NONE, NODE_TYPE_TEXT, NODE_TYPE_RECT, NODE_TYPE_LINE, NodeData} = require('./data')
 const {clone} = require('./utils')
@@ -47,6 +48,20 @@ class NoteManager {
     this.lastNode = null
     this.textInput = new TextInput(this)
     this.areaSelection = new AreaSelection()
+
+    this.filePath = null
+
+    ipc.on('selected-file', (event, path) => {
+      if(path) {
+        this.loadSub(path)
+      }
+    })
+
+    ipc.on('saved-file', (event, path) => {
+      if(path) {
+        this.saveSub(path)
+      }
+    })
   }
 
   clearSelection() {
@@ -417,7 +432,7 @@ class NoteManager {
     this.editHistory.addHistory(nodeDatas)
   }
 
-  save() {
+  saveSub(path) {
     const DATA_VERSION = 1
     
     const nodeDatas = []
@@ -429,17 +444,29 @@ class NoteManager {
       'nodes': nodeDatas,
     }
     const json = JSON.stringify(data)
-    const path = './tmp.dat'
     
     fs.writeFile(path, json, (error) => {
-      if (error != null) {
+      if(error != null) {
         console.log('save error')
       }
     })
+    
+    this.filePath = path
+  }
+
+  save() {
+    if( this.filePath == null ) {
+      ipc.send('save-dialog')
+    } else {
+      this.saveSub(this.filePath)
+    }
   }
 
   load() {
-    const path = './tmp.dat'
+    ipc.send('open-file-dialog')
+  }
+
+  loadSub(path) {
     fs.readFile(path, (error, json) => {
       if(error != null) {
         console.log('file open error')
@@ -450,7 +477,8 @@ class NoteManager {
         const nodeDatas = data.nodes
         this.applyNodeDatas(nodeDatas)
       }
-    })
+    })    
+    this.filePath = path
   }
 
   onResize() {
@@ -464,3 +492,4 @@ class NoteManager {
 module.exports = {
   NoteManager,
 }
+
