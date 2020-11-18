@@ -1,4 +1,5 @@
 const katex = require('katex')
+const {clone, cloneArray} = require('./utils')
 
 const NODE_TYPE_NONE = 0
 const NODE_TYPE_TEXT = 1
@@ -81,27 +82,6 @@ const checkLineSegmentLineSegmentCollision = (x0, y0, x1, y1, x2, y2, x3, y3) =>
   return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1)
 }
 
-
-const clone = (instance) => {
-  return Object.assign(
-    Object.create(
-      // Set the prototype of the new object to the prototype of the instance.
-      // Used to allow new object behave like class instance.
-      Object.getPrototypeOf(instance),
-    ),
-    // Prevent shallow copies of nested structures like arrays, etc
-    JSON.parse(JSON.stringify(instance)),
-  )
-}
-
-
-const cloneArray = (array) => {
-  const clonedArray = []
-  array.forEach(obj => {
-    clonedArray.push(clone(obj))
-  })
-  return clonedArray
-}
 
 
 // textノードのサイズを取得
