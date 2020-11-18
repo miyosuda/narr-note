@@ -1,6 +1,10 @@
 const katex = require('katex')
 const {clone, cloneArray} = require('./utils')
 
+const fs = require('fs') //.. for NoteManager
+
+
+
 const NODE_TYPE_NONE = 0
 const NODE_TYPE_TEXT = 1
 const NODE_TYPE_RECT = 2
@@ -1618,7 +1622,6 @@ class NoteManager {
   }
 
   save() {
-    /*
     const DATA_VERSION = 1
     
     const nodeDatas = []
@@ -1630,41 +1633,28 @@ class NoteManager {
       'nodes': nodeDatas,
     }
     const json = JSON.stringify(data)
+    const path = './tmp.dat'
     
-    let blob = new Blob([json], {type: 'application/json'})
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob)
-    document.body.appendChild(a) // Firefoxで必要
-    // TODO: 日付でファイル名作成
-    a.download = 'out.json'
-    a.click()
-    document.body.removeChild(a) // Firefoxで必要
-    URL.revokeObjectURL(a.href)
-    */
+    fs.writeFile(path, json, (error) => {
+      if (error != null) {
+        console.log('save error')
+      }
+    })
   }
 
   load() {
-    /*
-    let input = document.createElement('input')
-    document.body.appendChild(input)
-    input.setAttribute('type', 'file')
-    input.setAttribute('hidden', 'true')
-
-    input.addEventListener('change', event => {
-      const files = event.target.files
-      if( files.length > 0 ) {
-        const reader = new FileReader()
-        reader.readAsText(files[0])
-        reader.onload = () => {
-          const data = JSON.parse(reader.result)
-          const nodeDatas = data.nodes
-          this.applyNodeDatas(nodeDatas)
-        }
+    const path = './tmp.dat'
+    fs.readFile(path, (error, json) => {
+      if(error != null) {
+        console.log('file open error')
+        return null
+      }
+      if(json != null) {
+        const data = JSON.parse(json)
+        const nodeDatas = data.nodes
+        this.applyNodeDatas(nodeDatas)
       }
     })
-    input.click()
-    document.body.removeChild(input)
-    */
   }
 
   onResize() {
