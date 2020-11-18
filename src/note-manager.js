@@ -474,10 +474,20 @@ class NoteManager {
       }
       if(json != null) {
         const data = JSON.parse(json)
-        const nodeDatas = data.nodes
+        const rawNodeDatas = data.nodes
+        // NodeData classに変換する
+        const nodeDatas = []
+        rawNodeDatas.forEach(rawNodeData => {
+          const nodeData = new NodeData()
+          const rawNodeDataEntries = Object.entries(rawNodeData)
+          rawNodeDataEntries.map( e => {
+            nodeData[e[0]] = e[1]
+          } )
+          nodeDatas.push(nodeData)
+        })
         this.applyNodeDatas(nodeDatas)
       }
-    })    
+    })
     this.filePath = path
   }
 
