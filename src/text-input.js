@@ -53,8 +53,8 @@ class TextInput {
     input.addEventListener('keydown', (event) => {
       const key = event.keyCode || event.charCode || 0;
       if(key == 13) {
-        // enterキーが押されたが入力が変更されていなかった場合
-        if(!this.textChanged) {
+        // enterキーが押されたが入力が変更されていなかった or 入力が空だった場合
+        if(!this.textChanged || this.input.value.length==0) {
           this.onTextChange(input.value)
         }
       }
