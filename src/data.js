@@ -14,7 +14,20 @@ class NodeData {
 
   setText(text) {
     this.text = text
+    
+    if( this.setCheckRect(text) ) {
+      return
+    }
+    if( this.setCheckLine(text) ) {
+      return
+    }
 
+    // Lineで利用するプロパティの削除
+    this.clearLineProperties()
+    this.type = NODE_TYPE_TEXT
+  }
+
+  setCheckRect(text) {
     const rectPattern = /^\[(\d+)\]$/
     const rectMatchResult = text.match(rectPattern)
     if( rectMatchResult != null ) {
@@ -33,20 +46,80 @@ class NodeData {
         this.height = 50
       }
       this.type = NODE_TYPE_RECT
-      return
-    }
 
-    // TODO: lineのpattern matching
-    if( text == "---" ) {
+      // Lineで利用するプロパティの削除
+      this.clearLineProperties()
+      return true
+    } else {
+      return false
+    }
+  }
+
+  setCheckLine(text) {
+    // TODO: カラーの対応
+    const linePattern = /^(<?)(-[- ]*)(>?)$/
+    const lineMatchResult = text.match(linePattern)
+    
+    let dashed = false
+    let startArrow = false
+    let endArrow = false
+    let isLine = false
+
+    if(lineMatchResult != null) {
+      let singleHyfen = false
+      
+      for(let i=0; i<lineMatchResult.length; i++) {
+        console.log("" + i + "=" + lineMatchResult[i])
+      }
+      
+      if( lineMatchResult[1] === '<' ) {
+        startArrow = true
+      }
+      
+      if( lineMatchResult[2] === '-' ||
+          lineMatchResult[2] === '- ' ||
+          lineMatchResult[2] === ' -' ) {
+        singleHyfen = true
+      } else {
+        if( lineMatchResult[2].indexOf(' ') != -1 ) {
+          dashed = true
+        } else {
+          
+        }
+      }
+      
+      if( lineMatchResult[3] === '>' ) {
+        endArrow = true
+      }
+      
+      if( singleHyfen && !startArrow && !endArrow ) {
+        isLine = false
+      } else {
+        isLine = true
+      }
+    }
+    
+    if( isLine ) {
       if( this.type != NODE_TYPE_LINE ) {
+        // 初期化
         this.width = 100
         this.height = 0
       }
       this.type = NODE_TYPE_LINE
-      return
+      this.startArrow = startArrow
+      this.endArrow = endArrow
+      this.dashed = dashed
+      return true
+    } else {
+      return false
     }
+  }
 
-    this.type = NODE_TYPE_TEXT
+  clearLineProperties() {
+    // Lineで利用するプロパティの削除
+    delete this.startArrow
+    delete this.endArrow
+    delete this.dashed    
   }
 }
 

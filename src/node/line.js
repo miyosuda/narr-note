@@ -67,11 +67,17 @@ class LineNode {
     innerElement.setAttribute('y1', 0)
     innerElement.setAttribute('stroke', 'black')
     innerElement.setAttribute('stroke-width', 1.5)
-    //innerElement.setAttribute('stroke-dasharray', "4,4") //..
-    //innerElement.setAttribute('marker-start', "url(#arrow-start-black)")
-    //innerElement.setAttribute('marker-end',   "url(#arrow-end-black)")
+    if( data.dashed ) {
+      innerElement.setAttribute('stroke-dasharray', "4,4") //..
+    }
+    if( data.startArrow ) {
+      innerElement.setAttribute('marker-start', "url(#arrow-start-black)")
+    }
+    if( data.endArrow ) {
+      innerElement.setAttribute('marker-end',   "url(#arrow-end-black)")
+    }
     element.appendChild(innerElement)
-
+    
     this.anchors = []
     for(let i=0; i<lineAnchorData.length; i++) {
       const anchor = new Anchor(this, lineAnchorData[i])
