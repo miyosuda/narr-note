@@ -50,15 +50,27 @@ const lineAnchorData = [
 
 const LINE_HIT_DISTANCE = 5.0
 
+let nextLineId = 0
+
+
 class LineNode {
   constructor(data) {
     this.data = data
     
-    let ns = 'http://www.w3.org/2000/svg'
+    const ns = 'http://www.w3.org/2000/svg'
     let element = document.createElementNS(ns, 'g')    
     this.element = element
 
     this.applyPos()
+
+    let arrowElemetStart = null
+    if( data.startArrow ) {
+      arrowElemetStart = this.createArrowNode(true, nextLineId, data.color)
+    }
+    let arrowElemetEnd = null
+    if( data.endArrow ) {
+      arrowElemetEnd = this.createArrowNode(false, nextLineId, data.color)
+    }
     
     let innerElement = document.createElementNS(ns, 'line')
     this.innerElement = innerElement
@@ -68,15 +80,22 @@ class LineNode {
     innerElement.setAttribute('stroke', data.color)
     innerElement.setAttribute('stroke-width', 1.5)
     if( data.dashed ) {
-      innerElement.setAttribute('stroke-dasharray', "4,4")
+      innerElement.setAttribute('stroke-dasharray', '4,4')
     }
-    // TODO: arrrowのcolor対応
     if( data.startArrow ) {
-      innerElement.setAttribute('marker-start', "url(#arrow-start-black)")
+      innerElement.setAttribute('marker-start', 'url(#arrow-start-' + nextLineId + ')')
     }
     if( data.endArrow ) {
-      innerElement.setAttribute('marker-end',   "url(#arrow-end-black)")
+      innerElement.setAttribute('marker-end',   'url(#arrow-end-' + nextLineId + ')')
     }
+
+    if( arrowElemetStart != null ) {
+      element.appendChild(arrowElemetStart)
+    }
+    if( arrowElemetEnd != null ) {
+      element.appendChild(arrowElemetEnd)
+    }
+    
     element.appendChild(innerElement)
     
     this.anchors = []
@@ -91,6 +110,7 @@ class LineNode {
     g.appendChild(element)
     
     this.selected = false
+    nextLineId += 1
   }
 
   containsPos(x, y) {
@@ -98,6 +118,32 @@ class LineNode {
                                         this.left, this.top,
                                         this.right, this.bottom)
     return( d <= LINE_HIT_DISTANCE && d >= -LINE_HIT_DISTANCE )
+  }
+
+  createArrowNode(isStart, lineId, color) {
+    const ns = 'http://www.w3.org/2000/svg'
+    let arrowElement = document.createElementNS(ns, 'marker')
+    if( isStart ) {
+      arrowElement.setAttribute('id', 'arrow-start-' + lineId)
+    } else {
+      arrowElement.setAttribute('id', 'arrow-end-' + lineId)
+    }
+    arrowElement.setAttribute('viewBox', '-5 -5 10 10')
+    arrowElement.setAttribute('orient', 'auto')
+    arrowElement.setAttribute('markerUnits', 'strokeWidth')
+    arrowElement.setAttribute('markerWidth', 7)
+    arrowElement.setAttribute('markerHeight', 7)
+    
+    let polygonElement = document.createElementNS(ns, 'polygon')
+    if( isStart ) {
+      polygonElement.setAttribute('points', '5,-5 -5,0 5,5')
+    } else {
+      polygonElement.setAttribute('points', '-5,-5 5,0 -5,5')
+    }
+    polygonElement.setAttribute('fill', color)
+    polygonElement.setAttribute('strok', 'none')
+    arrowElement.appendChild(polygonElement)
+    return arrowElement
   }
 
   containsPosOnAnchor(x, y) {
