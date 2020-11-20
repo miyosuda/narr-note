@@ -1,4 +1,10 @@
-  
+
+## Develop
+
+```
+npm start
+```
+
 ## Build
 
 ### Mac

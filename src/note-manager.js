@@ -336,7 +336,9 @@ class NoteManager {
       // 最初に見つけたらそこでloopを抜ける
       let node = this.nodes[i]
       if( node.containsPos(x, y) ) {
-        this.textInput.show(node.data)        
+        // text input表示
+        this.textInput.show(node.data)
+        // ノードを削除
         this.removeNode(node)
         // undoバッファ対応
         this.storeState()
@@ -346,11 +348,12 @@ class NoteManager {
   }
 
   onTextDecided(data) {
-    // TODO: テキストが空文字ならばノードを追加しない
-    // 新規にノードを追加
-    this.addNode(data)
-    // undoバッファ対応
-    this.storeState()
+    // テキストが空文字ならばノードを追加しない
+    if( data.text != "" ) {
+      this.addNode(data)
+      // undoバッファ対応
+      this.storeState()
+    }
   }
 
   duplicateSelectedNodes() {
