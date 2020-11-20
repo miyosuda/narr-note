@@ -49,11 +49,12 @@ class NodeData {
         this.height = 50
       }
 
+      this.clearLineProperties()
+
       this.rounded = rounded
       this.color = this.getColor(rectMatchResult[2], '#FF0000')
-      
       this.type = NODE_TYPE_RECT
-      this.clearLineProperties()
+      
       return true
     } else {
       return false
@@ -61,21 +62,17 @@ class NodeData {
   }
 
   setCheckLine(text) {
-    // TODO: カラーの対応
-    const linePattern = /^(<?)(-[- ]*)(>?)$/
+    const linePattern = /^(<?)(-[- ]*)(>?)([rgbcmyk]?)$/
     const lineMatchResult = text.match(linePattern)
     
     let dashed = false
     let startArrow = false
     let endArrow = false
     let isLine = false
+    let color = null
 
     if(lineMatchResult != null) {
       let singleHyfen = false
-      
-      for(let i=0; i<lineMatchResult.length; i++) {
-        console.log("" + i + "=" + lineMatchResult[i])
-      }
       
       if( lineMatchResult[1] === '<' ) {
         startArrow = true
@@ -96,6 +93,8 @@ class NodeData {
       if( lineMatchResult[3] === '>' ) {
         endArrow = true
       }
+
+      color = this.getColor(lineMatchResult[4], '#000000')
       
       if( singleHyfen && !startArrow && !endArrow ) {
         isLine = false
@@ -110,11 +109,13 @@ class NodeData {
         this.width = 100
         this.height = 0
       }
+      this.clearRectProperties()
+      
       this.type = NODE_TYPE_LINE
       this.startArrow = startArrow
       this.endArrow = endArrow
       this.dashed = dashed
-      this.clearRectProperties()
+      this.color = color
       return true
     } else {
       return false
@@ -126,11 +127,13 @@ class NodeData {
     delete this.startArrow
     delete this.endArrow
     delete this.dashed
+    delete this.color
   }
   
   clearRectProperties() {
     // Rectで利用するプロパティの削除
     delete this.rounded
+    delete this.color
   }
 
   getColor(colorCode, defaultColor) {

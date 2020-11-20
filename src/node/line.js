@@ -65,11 +65,12 @@ class LineNode {
     
     innerElement.setAttribute('x1', 0)
     innerElement.setAttribute('y1', 0)
-    innerElement.setAttribute('stroke', 'black')
+    innerElement.setAttribute('stroke', data.color)
     innerElement.setAttribute('stroke-width', 1.5)
     if( data.dashed ) {
-      innerElement.setAttribute('stroke-dasharray', "4,4") //..
+      innerElement.setAttribute('stroke-dasharray', "4,4")
     }
+    // TODO: arrrowのcolor対応
     if( data.startArrow ) {
       innerElement.setAttribute('marker-start', "url(#arrow-start-black)")
     }
