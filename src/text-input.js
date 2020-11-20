@@ -21,12 +21,21 @@ const getStringLength = (str) => {
   return result
 }
 
-const getStringLengthWithMin = (str, minSize=5) => {
-  let stringSize = getStringLength(str)
-  if( stringSize < minSize ) {
-    stringSize = minSize
+
+const getStringLengthAndRow = (str, minSize=5) => {
+  const texts = str.split('\n')
+  const rowSize = texts.length
+
+  let maxLength = minSize
+  for(let i=0; i<texts.length; i++) {
+    const text = texts[i]
+    const length = getStringLength(text)
+    if(length > maxLength) {
+      maxLength = length
+    }
   }
-  return stringSize
+
+  return [maxLength, rowSize]
 }
 
 
@@ -51,7 +60,9 @@ class TextInput {
     })
 
     input.addEventListener('keydown', (event) => {
-      const key = event.keyCode || event.charCode || 0;
+      const key = event.keyCode || event.charCode || 0
+      console.log('text input key=' + key) //..
+      
       if(key == 13) {
         // enterキーが押されたが入力が変更されていなかった or 入力が空だった場合
         if(!this.textChanged || this.input.value.length==0) {
@@ -59,7 +70,7 @@ class TextInput {
         }
       }
     })
-
+    
     this.input = input
     
     this.hide()
@@ -67,18 +78,19 @@ class TextInput {
 
   show(data) {
     this.data = clone(data)
-    let stringSize = getStringLengthWithMin(this.data.text)
-    this.input.setAttribute("size", stringSize)
     this.input.value = this.data.text
-
+    console.log("text=" + this.data.text + ":") //..
+    
+    this.updateSize()
+    
     this.foreignObject.x.baseVal.value = this.data.x
     this.foreignObject.y.baseVal.value = this.data.y
     this.foreignObject.width.baseVal.value = this.input.offsetWidth + 3
     this.foreignObject.height.baseVal.value = this.input.offsetHeight + 10
     this.foreignObject.style.display = 'block' // TODO: blockで良いかどうか確認
-
+    
     this.input.focus()
-
+    
     this.textChanged = false
     this.shown = true
   }
@@ -88,12 +100,19 @@ class TextInput {
     this.shown = false
   }
 
+  updateSize() {
+    // テキストが変化した
+    let [stringLength, rows] = getStringLengthAndRow(this.input.value)
+    this.input.style.width = (stringLength * 10) + "px"
+    this.input.setAttribute('rows', rows)
+  }
+
   onTextInput(value) {
     this.textChanged = true
     
     // テキストが変化した
-    let stringSize = getStringLengthWithMin(value)
-    this.input.setAttribute("size", stringSize)
+    // TODO: 引数のvalueいらなくなるか?
+    this.updateSize()
     
     // foreignObjectのサイズも変える
     this.foreignObject.width.baseVal.value = this.input.offsetWidth + 3
@@ -105,6 +124,8 @@ class TextInput {
       // hide()した後に呼ばれる場合があるのでその場合をskip
       return
     }
+    console.log('on text change=' + value)
+    
     // テキスト入力が完了した
     this.data.setText(value)
     this.noteManager.onTextDecided(this.data)
