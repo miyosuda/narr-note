@@ -22,32 +22,37 @@ class NodeData {
       return
     }
 
-    // Lineで利用するプロパティの削除
+    // Rect,Lineで利用するプロパティの削除
     this.clearLineProperties()
+    this.clearRectProperties()
     this.type = NODE_TYPE_TEXT
   }
 
   setCheckRect(text) {
-    const rectPattern = /^\[(\d+)\]$/
+    const rectPattern = /^([{\[])([rgbcmyk]?)([}\]])$/
     const rectMatchResult = text.match(rectPattern)
-    if( rectMatchResult != null ) {
-      // TODO: カラーの対応
-      const rectColorId = rectMatchResult[1]
-      if( rectColorId == 0 ) {
-        this.color = "#FF0000"
-      } else if( rectColorId == 1 ) {
-        this.color = "#00FF00"
+    
+    if(rectMatchResult != null) {
+      let rounded = false
+      if( rectMatchResult[1] == '{' &&
+          rectMatchResult[3] == '}' ) {
+        rounded = true
+      } else if ( rectMatchResult[1] == '[' &&
+                  rectMatchResult[3] == ']' ) {
+        rounded = false
       } else {
-        this.color = "#0000FF"
+        return false
       }
       
       if( this.type != NODE_TYPE_RECT ) {
         this.width = 50
         this.height = 50
       }
-      this.type = NODE_TYPE_RECT
 
-      // Lineで利用するプロパティの削除
+      this.rounded = rounded
+      this.color = this.getColor(rectMatchResult[2], '#FF0000')
+      
+      this.type = NODE_TYPE_RECT
       this.clearLineProperties()
       return true
     } else {
@@ -109,6 +114,7 @@ class NodeData {
       this.startArrow = startArrow
       this.endArrow = endArrow
       this.dashed = dashed
+      this.clearRectProperties()
       return true
     } else {
       return false
@@ -119,7 +125,32 @@ class NodeData {
     // Lineで利用するプロパティの削除
     delete this.startArrow
     delete this.endArrow
-    delete this.dashed    
+    delete this.dashed
+  }
+  
+  clearRectProperties() {
+    // Rectで利用するプロパティの削除
+    delete this.rounded
+  }
+
+  getColor(colorCode, defaultColor) {
+    if( colorCode == 'r' ) {
+      return "#FF0000"
+    } else if( colorCode == 'g' ) {
+      return "#00FF00"
+    } else if( colorCode == 'b' ) {
+      return "#0000FF"
+    } else if( colorCode == 'c' ) {
+      return "#00FFFF"
+    } else if( colorCode == 'm' ) {
+      return "#FF00FF"
+    } else if( colorCode == 'y' ) {
+      return "#FD9E00" // オレンジ色に近くしている
+    } else if( colorCode == 'k' ) {
+      return "#000000"
+    } else {
+      return defaultColor
+    }
   }
 }
 

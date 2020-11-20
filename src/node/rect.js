@@ -105,12 +105,14 @@ class RectNode {
     this.applyPos()
     
     let innerElement = document.createElementNS(ns, 'rect')
-    this.innerElement = innerElement   
+    this.innerElement = innerElement
     
     innerElement.setAttribute('x', 0)
     innerElement.setAttribute('y', 0)
-    innerElement.setAttribute('rx', 10)
-    innerElement.setAttribute('ry', 10)
+    if( data.rounded ) {
+      innerElement.setAttribute('rx', 10)
+      innerElement.setAttribute('ry', 10)
+    }
     innerElement.setAttribute('fill', data.color)
     innerElement.setAttribute('fill-opacity', 0.2)
     element.appendChild(innerElement)
