@@ -46,9 +46,10 @@ class TextInput {
     
     let input = document.getElementById('textInput')
     this.textChanged = false
+    this.shiftOn = false
 
     input.addEventListener('input', () => {
-      this.onTextInput(input.value)
+      this.onTextInput()
     })
 
     input.addEventListener('change', () => {
@@ -61,13 +62,24 @@ class TextInput {
 
     input.addEventListener('keydown', (event) => {
       const key = event.keyCode || event.charCode || 0
-      console.log('text input key=' + key) //..
       
       if(key == 13) {
-        // enterキーが押されたが入力が変更されていなかった or 入力が空だった場合
-        if(!this.textChanged || this.input.value.length==0) {
+        if(!this.shiftOn) {
+          // シフトキーが押されていなかった場合、入力決定とする
           this.onTextChange(input.value)
         }
+      } else if(key == 16) {
+        // shiftキー押下
+        this.shiftOn = true
+      }
+    })
+
+    input.addEventListener('keyup', (event) => {
+      const key = event.keyCode || event.charCode || 0
+      
+      if(key == 16) {
+        // shiftキー離した
+        this.shiftOn = false
       }
     })
     
@@ -79,7 +91,6 @@ class TextInput {
   show(data) {
     this.data = clone(data)
     this.input.value = this.data.text
-    console.log("text=" + this.data.text + ":") //..
     
     this.updateSize()
     
@@ -107,11 +118,9 @@ class TextInput {
     this.input.setAttribute('rows', rows)
   }
 
-  onTextInput(value) {
-    this.textChanged = true
-    
+  onTextInput() {
     // テキストが変化した
-    // TODO: 引数のvalueいらなくなるか?
+    this.textChanged = true
     this.updateSize()
     
     // foreignObjectのサイズも変える
@@ -124,7 +133,6 @@ class TextInput {
       // hide()した後に呼ばれる場合があるのでその場合をskip
       return
     }
-    console.log('on text change=' + value)
     
     // テキスト入力が完了した
     this.data.setText(value)

@@ -130,6 +130,7 @@ class NoteManager {
       e.preventDefault()
     } else if(e.key === 'Enter' ) {
       this.showInput(false)
+      e.preventDefault()
     } else if(e.key === 'Backspace' ) {
       this.deleteSelectedNodes()
     } else if( (e.key === 'd' && e.ctrlKey) || (e.key === 'd' && e.metaKey) ) {
