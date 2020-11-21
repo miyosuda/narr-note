@@ -57,7 +57,7 @@ const findEndOfMath = (delimiter, text, startIndex) => {
 const splitAtDelimiters = (startData, leftDelim, rightDelim, display) => {
   const finalData = []
 
-  for(let i = 0; i < startData.length; i++) {
+  for(let i=0; i<startData.length; i++) {
     if (startData[i].type === "text") {
       const text = startData[i].data
 
@@ -131,9 +131,10 @@ const splitWithDelimiters = (text, delimiters) => {
   let data = [{type: "text", data: text}]
   for(let i = 0; i < delimiters.length; i++) {
     const delimiter = delimiters[i]
-    data = splitAtDelimiters(
-      data, delimiter.left, delimiter.right,
-      delimiter.display || false)
+    data = splitAtDelimiters(data,
+                             delimiter.left,
+                             delimiter.right,
+                             delimiter.display)
   }
   return data
 }
@@ -144,7 +145,7 @@ const render = (text, element) => {
     throwOnError: true,
     delimiters: [
 	  {left: "$$", right: "$$", display: true},
-      {left: "$", right: "$", display: false}
+      {left: "$",  right: "$",  display: false}
 	]
   }
   
@@ -152,11 +153,22 @@ const render = (text, element) => {
   
   for(let i=0; i<data.length; ++i) {
     if( data[i].type === "text" && data[i].data != '' ) {
-      let span = document.createElement('span')
-      // テキスト選択無効のクラスを指定
-      span.className = 'disable-select';
-      span.textContent = data[i].data
-      element.appendChild(span)
+      const localTexts = data[i].data.split('\n')
+      
+      for(let j=0; j<localTexts.length; j++) {
+        const localText = localTexts[j]
+        let span = document.createElement('span')
+        // テキスト選択無効のクラスを指定
+        span.className = 'disable-select';
+        span.textContent = localText
+        element.appendChild(span)
+
+        if( localTexts.length > 1 ) {
+          let br = document.createElement('br')
+          element.appendChild(br)
+        }
+      }
+
     } else if( data[i].type === "math" ) {
       let mathElement = null
       
