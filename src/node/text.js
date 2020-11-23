@@ -17,7 +17,7 @@ const getElementDimension = (html) => {
   document.body.append(element)
   
   const dimensions = {}
-  // selected時のborderの為に幅を広げておく
+  // 上下左右2px幅を広げている
   dimensions.width = element.getBoundingClientRect().width + 2
   dimensions.height = element.getBoundingClientRect().height + 2
 
