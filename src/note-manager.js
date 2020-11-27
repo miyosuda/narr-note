@@ -186,6 +186,11 @@ class NoteManager {
   }
 
   onMouseDown(e) {
+    if( this.textInput.isShown() ) {
+      // textInput表示中なら何もしない
+      return
+    }
+    
     this.nodeEditied = false
     
     const pos = this.getLocalPos(e)

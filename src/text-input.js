@@ -139,6 +139,10 @@ class TextInput {
     this.noteManager.onTextDecided(this.data)
     this.hide()
   }
+
+  isShown() {
+    return this.shown
+  }
 }
 
 
