@@ -160,6 +160,31 @@ class NoteManager {
     }    
   }
 
+  findPickNode(x, y) {
+    // マウスが乗った物のなから一番小さい物をまずpick対象として選ぶ
+    const pickNodeCandidates = []
+    let pickNode = null
+    
+    for(let i=0; i<this.nodes.length; i++) {
+      const node = this.nodes[i]
+      if( node.containsPos(x, y) ) {
+        pickNodeCandidates.push(node)
+      }
+    }
+
+    if( pickNodeCandidates.length > 0 ) {
+      // マウスが乗った物を面積の小さい物順にソート
+      pickNodeCandidates.sort((node0, node1) => {
+        // 面積が小さい方を優先
+        return node0.areaSize() - node1.areaSize()
+      })
+      // マウスが乗った物のうち、一番面積が小さかった物
+      pickNode = pickNodeCandidates[0]
+    }
+    
+    return pickNode
+  }
+
   onMouseDown(e) {
     this.nodeEditied = false
     
@@ -193,35 +218,15 @@ class NoteManager {
       return
     }
 
-    let dragMode = DRAG_NONE
-
     // マウスが乗った物のなから一番小さい物をまずpick対象として選ぶ
-    const pickNodeCandidates = []
-    let pickNode = null
-    
-    for(let i=0; i<this.nodes.length; i++) {
-      const node = this.nodes[i]
-      if( node.containsPos(x, y) ) {
-        pickNodeCandidates.push(node)
-      }
-    }
+    let pickNode = this.findPickNode(x, y)
 
-    if( pickNodeCandidates.length > 0 ) {
-      // マウスが乗った物を面積の小さい物順にソート
-      pickNodeCandidates.sort((node0, node1) => {
-        // 面積が小さい方を優先
-        return node0.areaSize() - node1.areaSize()
-      })
-      // マウスが乗った物のうち、一番面積が小さかった物
-      pickNode = pickNodeCandidates[0]
-    }
-
+    let dragMode = DRAG_NONE    
     const shitDown = e.shiftKey
-
+    let clearSelection = false
+    
     // selected nodesを一旦クリア
     this.selectedNodes = []
-    
-    let clearSelection = false
     
     if(pickNode != null) {
       // pickNodeがあった場合
@@ -334,20 +339,22 @@ class NoteManager {
 
       if( this.areaSelection.isShown() ) {
         const area = this.areaSelection.onDrag(x, y)
-        const adding = e.shiftKey
+        const shiftDown = e.shiftKey
         
         for(let i=0; i<this.nodes.length; i++) {
           const node = this.nodes[i]
 
           // shift押下時のoverlapは単に追加していくやりかた
           // TODO: toggle版の対応
+          //       toggleに対応しようとすると、drag開始時のselected状態を保持しておく必要がある?
+          //       -> nodeのstartDragging()時に中で、selectedWehnDragStartを設定する?
           if( node.overlaps(area) ) {
             if( !node.isSelected() ) {
               // 選択されていなかったら選択済に追加
               this.selectedNodes.push(node)
               node.setSelected(true)
             }
-          } else if(!adding) {
+          } else if(!shiftDown) {
             if( node.isSelected() ) {
               // 選択済から削除
               const nodeIndex = this.selectedNodes.indexOf(node)
@@ -380,19 +387,15 @@ class NoteManager {
     const pos = this.getLocalPos(e)
     const x = pos.x
     const y = pos.y
-
-    for(let i=this.nodes.length-1; i>=0; i--) {
-      // 最初に見つけたらそこでloopを抜ける
-      let node = this.nodes[i]
-      if( node.containsPos(x, y) ) {
-        // text input表示
-        this.textInput.show(node.data)
-        // ノードを削除
-        this.removeNode(node)
-        // undoバッファ対応
-        this.storeState()
-        break
-      }
+    
+    const pickNode = this.findPickNode (x, y)
+    if( pickNode != null ) {
+      // text input表示
+      this.textInput.show(pickNode.data)
+      // ノードを削除
+      this.removeNode(pickNode)
+      // undoバッファ対応
+      this.storeState()
     }
   }
 
