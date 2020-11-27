@@ -23,6 +23,10 @@ const createNode = (data) => {
   }
 }
 
+const DRAG_NONE = 0
+const DRAG_NODE = 1
+const DRAG_AREA = 2
+
 
 class NoteManager {
   constructor() {
@@ -174,6 +178,7 @@ class NoteManager {
     }
 
     if( this.selectedAnchor != null ) {
+      // Anchor上のクリックだった場合
       this.isMouseDown = true
       this.dragStartX = x
       this.dragStartY = y
@@ -185,6 +190,8 @@ class NoteManager {
 
       this.selectedAnchor.show()
       this.selectedAnchor.onDragStart()
+
+      this.dragMode = DRAG_ANCHOR
       return
     }
 
@@ -200,52 +207,91 @@ class NoteManager {
     }
 
     if( pickNodeCandidates.length > 0 ) {
+      // マウスが乗った物を面積の小さい物順にソート
       pickNodeCandidates.sort((node0, node1) => {
         // 面積が小さい方を優先
         return node0.areaSize() - node1.areaSize()
       })
+      // マウスが乗った物のうち、一番面積が小さかった物
       pickNode = pickNodeCandidates[0]
     }
-    
-    // 今回既に選択済のNode上のクリックだったかどうか
-    let hitOnSelectedNode = false
-    
-    if( pickNode != null && pickNode.isSelected() ) {
-      hitOnSelectedNode = true
-    }
 
-    // TODO: shift押下時にselectedを外す対応
-    
-    const addingSelection = e.shiftKey || hitOnSelectedNode
+    // TODO: dragModeとisMouseDownの扱いの問題解決
+
+    const shitDown = e.shiftKey
+
+    // selected nodesを一旦クリア
     this.selectedNodes = []
+    
+    let clearSelection = false
+    
+    if(pickNode != null) {
+      if(shitDown) {
+        if(pickNode.isSelected()) {
+          // shift押下でselectedなnodeをpick.
+          // pickNodeを選択済みでなくす.
+          pickNode.setSelected(false)
+          // ドラッグは開始しない. エリア選択も開始しない.
+          // 他のnodeのselected状態はそのままキープ.
+          this.dragMode = DRAG_NONE
+        } else {
+          // shift押下で、pickNodeがselectedでなかった場合
+          // pickNodeをselectedにして、
+          // 他のselectedの物も含めて全selected nodeをdrag
+          pickNode.setSelected(true)
+          pickNode.onDragStart()
+          this.selectedNodes.push(pickNode)
+          this.dragMode = DRAG_NODE
+          // 他のnodeのselected状態はそのままキープ
+        }
+      } else {
+        if(pickNode.isSelected()) {
+          // 他のselectedの物も含めて全selected nodeをdrag
+          pickNode.onDragStart()
+          this.selectedNodes.push(pickNode)
+          this.dragMode = DRAG_NODE
+          // 他のnodeのselected状態はそのままキープ
+        } else {
+          pickNode.setSelected(true)
+          pickNode.onDragStart()
+          this.selectedNodes.push(pickNode)
+          this.dragMode = DRAG_NODE
+          // 他のnodeのselected状態はクリア
+          clearSelection = true
+        }
+      }
+    } else {
+      if(shitDown) {
+        this.dragMode = DRAG_NONE
+        // ドラッグは開始しない. エリア選択も開始しない.
+        // 全nodeのselected状態はそのままキープ
+      } else {
+        this.dragMode = DRAG_AREA
+        // 全nodeのselected状態はクリア
+        clearSelection = true
+      }
+    }
     
     for(let i=0; i<this.nodes.length; i++) {
       const node = this.nodes[i]
-      if( addingSelection ) {
-        if( node.isSelected() && node != pickNode ) {
-          // 選択済みのものであれば
-          // Nodeがマウスの上になろうがなかろうが、drag start処理を行う.
-          node.onDragStart()
-          this.selectedNodes.push(node)
-        }
-      } else {
-        if( node != pickNode ) {
-          // 選択済みだった場合に選択状態をクリア
-          node.setSelected(false)
+      if( node != pickNode ) {
+        if( node.isSelected() ) {
+          if(clearSelection) {
+            node.setSelected(false)
+          } else {
+            node.onDragStart()
+            this.selectedNodes.push(node)
+          }
         }
       }
     }
 
-    if( pickNode != null ) {
-      pickNode.setSelected(true)
-      pickNode.onDragStart()
-      this.selectedNodes.push(pickNode)
-
-      this.isMouseDown = true
+    if( this.dragMode == DRAG_NODE ) {
+      this.isMouseDown = true // TODO: 無くなるか
       this.dragStartX = x
-      this.dragStartY = y      
-    } else {
-      this.isMouseDown = true
+      this.dragStartY = y
+    } else if( this.dragMode == DRAG_AREA ) {
+      this.isMouseDown = true // TODO: 無くなるか
       this.dragStartX = x
       this.dragStartY = y
       this.areaSelection.onDragStart(x, y)
@@ -294,8 +340,8 @@ class NoteManager {
           // shift押下時のoverlapは単に追加していくやりかた
           // TODO: toggle版の対応
           if( node.overlaps(area) ) {
-            // 選択済に追加
             if( !node.isSelected() ) {
+              // 選択されていなかったら選択済に追加
               this.selectedNodes.push(node)
               node.setSelected(true)
             }
