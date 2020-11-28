@@ -35,3 +35,8 @@ textarea {
 textarea:focus {
   outline: none;
 }
+
+/* math preview field */
+.math-preview {
+  background: #cfcfcf;
+}

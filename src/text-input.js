@@ -1,4 +1,5 @@
 const {clone} = require('./utils')
+const {getElementDimension, renderMathOnPos} = require('./text-utils')
 
 // 全角を2文字としてカウントする文字列カウント
 const getStringLength = (str) => {
@@ -48,6 +49,8 @@ class TextInput {
     this.textChanged = false
     this.shiftOn = false
 
+    this.mathPreviewElement = null
+
     input.addEventListener('input', () => {
       this.onTextInput()
     })
@@ -83,6 +86,17 @@ class TextInput {
       }
     })
     
+    input.addEventListener('keyup',       (event)=>{this.onCaretMove(event)})
+    //input.addEventListener('mousedown',   (event)=>{this.onCaretMove(event)})
+    input.addEventListener('mouseup',   (event)=>{this.onCaretMove(event)})
+    input.addEventListener('touchstart',  (event)=>{this.onCaretMove(event)})
+    //input.addEventListener('input',       (event)=>{this.onCaretMove(event)})
+    input.addEventListener('paste',       (event)=>{this.onCaretMove(event)})
+    input.addEventListener('cut',         (event)=>{this.onCaretMove(event)})
+    //input.addEventListener('mousemove',   ()=>{this.onCaretMove(event)})
+    input.addEventListener('select',      (event)=>{this.onCaretMove(event)})
+    input.addEventListener('selectstart', (event)=>{this.onCaretMove(event)})
+    
     this.input = input
     
     this.hide()
@@ -109,6 +123,8 @@ class TextInput {
   hide() {
     this.foreignObject.style.display = 'none'
     this.shown = false
+
+    this.removePreview()
   }
 
   updateSize() {
@@ -140,11 +156,40 @@ class TextInput {
     this.hide()
   }
 
+  removePreview() {
+    if( this.mathPreviewElement != null ) {
+      this.mathPreviewElement.remove()
+      this.mathPreviewElement = null
+    }
+  }
+
+  onCaretMove(event) {
+    const caretPos = this.input.selectionStart
+    console.log("caretPos=" + caretPos + " event=" + event) //..
+    
+    // TODO: 毎回renderしなくても、text変更時以外はrenderしない様に軽量化が可能
+    const mathElement = renderMathOnPos(this.input.value, caretPos)
+    console.log(mathElement) //..
+
+    if( mathElement != null ) {
+      this.removePreview()
+
+      const dims = getElementDimension(mathElement.innerHTML)
+      console.log("dims w=" + dims.width + " h=" + dims.height)
+      this.foreignObject.appendChild(mathElement)
+      mathElement.width = dims.width
+      mathElement.height = dims.height
+      
+      this.mathPreviewElement = mathElement
+    } else {
+      this.removePreview()
+    }
+  }
+
   isShown() {
     return this.shown
   }
 }
-
 
 module.exports = {
   TextInput,

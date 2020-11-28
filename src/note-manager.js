@@ -90,7 +90,9 @@ class NoteManager {
         y = this.lastNode.bottom + 10
       }
     }
-
+    
+    // TODO: 画面外に出ない様にする対応
+    
     const data = new NodeData(x, y, "")
     this.textInput.show(data)
   }
@@ -423,6 +425,8 @@ class NoteManager {
       newData.x += 10
       newData.y += 10
 
+      // TODO: 画面外に出ない様にする対応
+      
       // 新規にノードを追加
       const newNode = this.addNode(newData)
       duplicatedNodes.push(newNode)
