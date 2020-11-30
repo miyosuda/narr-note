@@ -237,8 +237,7 @@ const renderMathOnPos = (text, pos) => {
         console.log(errorStr)
         let errorSpan = document.createElement('span')
         errorSpan.textContent = "error"
-        element.appendChild(errorSpan)
-        continue
+        return errorSpan
       }
       
       return mathElement

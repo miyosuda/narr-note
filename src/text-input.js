@@ -45,10 +45,15 @@ class TextInput {
     this.noteManager = noteManager
     this.foreignObject = document.getElementById('textInputObj')
     
-    let input = document.getElementById('textInput')
+    const input = document.getElementById('textInput')
+    this.input = input
+    
     this.textChanged = false
     this.shiftOn = false
-
+    
+    const inputContainer = document.getElementById('textInputContainer')
+    this.inputContainer = inputContainer
+    
     this.mathPreviewElement = null
 
     input.addEventListener('input', () => {
@@ -97,8 +102,6 @@ class TextInput {
     input.addEventListener('select',      (event)=>{this.onCaretMove(event)})
     input.addEventListener('selectstart', (event)=>{this.onCaretMove(event)})
     
-    this.input = input
-    
     this.hide()
   }
 
@@ -106,13 +109,14 @@ class TextInput {
     this.data = clone(data)
     this.input.value = this.data.text
     
-    this.updateSize()
+    this.updateInputSize()
+
+    // 先にdisplayをセットしておかないとinput.offsetWidth等が取れない
+    this.foreignObject.style.display = 'block'
     
     this.foreignObject.x.baseVal.value = this.data.x
     this.foreignObject.y.baseVal.value = this.data.y
-    this.foreignObject.width.baseVal.value = this.input.offsetWidth + 3
-    this.foreignObject.height.baseVal.value = this.input.offsetHeight + 10
-    this.foreignObject.style.display = 'block' // TODO: blockで良いかどうか確認
+    this.updateOuterSize()
     
     this.input.focus()
     
@@ -127,21 +131,27 @@ class TextInput {
     this.removePreview()
   }
 
-  updateSize() {
+  updateInputSize() {
     // テキストが変化した
     let [stringLength, rows] = getStringLengthAndRow(this.input.value)
     this.input.style.width = (stringLength * 10) + "px"
     this.input.setAttribute('rows', rows)
   }
 
+  updateOuterSize() {
+    // foreignObjectのサイズを更新する
+    const dims = getElementDimension(this.inputContainer.innerHTML)
+    this.foreignObject.width.baseVal.value = dims.width
+    this.foreignObject.height.baseVal.value = dims.height
+  }
+
   onTextInput() {
     // テキストが変化した
     this.textChanged = true
-    this.updateSize()
+    this.updateInputSize()
     
     // foreignObjectのサイズも変える
-    this.foreignObject.width.baseVal.value = this.input.offsetWidth + 3
-    this.foreignObject.height.baseVal.value = this.input.offsetHeight + 10
+    this.updateOuterSize()
   }
   
   onTextChange(value) {
@@ -165,21 +175,18 @@ class TextInput {
 
   onCaretMove(event) {
     const caretPos = this.input.selectionStart
-    console.log("caretPos=" + caretPos + " event=" + event) //..
+    //console.log("caretPos=" + caretPos + " event=" + event) //..
     
     // TODO: 毎回renderしなくても、text変更時以外はrenderしない様に軽量化が可能
     const mathElement = renderMathOnPos(this.input.value, caretPos)
-    console.log(mathElement) //..
+    //console.log("mathElement=" + mathElement) //..
 
     if( mathElement != null ) {
       this.removePreview()
-
-      const dims = getElementDimension(mathElement.innerHTML)
-      console.log("dims w=" + dims.width + " h=" + dims.height)
-      this.foreignObject.appendChild(mathElement)
-      mathElement.width = dims.width
-      mathElement.height = dims.height
-      
+      this.inputContainer.appendChild(mathElement)
+      const dims = getElementDimension(this.inputContainer.innerHTML)
+      this.foreignObject.width.baseVal.value = dims.width
+      this.foreignObject.height.baseVal.value = dims.height
       this.mathPreviewElement = mathElement
     } else {
       this.removePreview()
