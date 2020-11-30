@@ -54,11 +54,11 @@ textarea:focus {
 .math-preview:before {
   content: "";
   position: absolute;
-  top: -30px;
+  top: -20px;
   left: 50%;
-  margin-left: -15px;
-  border: 15px solid transparent;
-  border-bottom: 15px solid #e0edff;
+  margin-left: -10px;
+  border: 10px solid transparent;
+  border-bottom: 10px solid #e0edff;
 }
 
 .math-preview p {
