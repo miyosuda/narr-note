@@ -65,3 +65,30 @@ textarea:focus {
   margin: 0;
   padding: 0;
 }
+
+
+
+.text_h1 {
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.text_h2 {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.text_h3 {
+  font-size: 18.72px;
+  font-weight: bold;
+}
+
+.text_h4 {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.text_h5 {
+  font-size: 13.28px;
+  font-weight: bold;
+}
