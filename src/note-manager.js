@@ -547,12 +547,16 @@ class NoteManager {
 
   undo() {
     const noteData = this.editHistory.undo()
-    this.applyNodeDatas(noteData)
+    if( noteData != null ) {
+      this.applyNodeDatas(noteData)
+    }
   }
 
   redo() {
     const noteData = this.editHistory.redo()
-    this.applyNodeDatas(noteData)
+    if( noteData != null ) {
+      this.applyNodeDatas(noteData)
+    }
   }
 
   storeState() {
