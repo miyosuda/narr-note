@@ -73,13 +73,6 @@ class NoteManager {
     })
   }
 
-  clearSelection() {
-    this.selectedNodes.forEach(node => {
-      node.setSelected(false)
-    })
-    this.selectedNodes = []
-  }
-
   showInput(asSibling) {
     this.clearSelection()
     
@@ -116,18 +109,6 @@ class NoteManager {
       // undoバッファ対応
       this.storeState()
     }
-  }
-
-  getLocalPos(e) {
-    const rect = document.getElementById('svg').getBoundingClientRect()
-    
-    const x = e.clientX
-    const y = e.clientY
-
-    const pos = {}
-    pos.x = x - rect.left
-    pos.y = y - rect.top
-    return pos
   }
 
   onKeyDown(e) {
@@ -427,6 +408,46 @@ class NoteManager {
     }
   }
 
+  onResize() {
+    const svg = document.getElementById('svg')
+    svg.setAttribute('width', window.innerWidth)
+    svg.setAttribute('height', window.innerHeight)
+  }
+
+  getLocalPos(e) {
+    const rect = document.getElementById('svg').getBoundingClientRect()
+    
+    const x = e.clientX
+    const y = e.clientY
+
+    const pos = {}
+    pos.x = x - rect.left
+    pos.y = y - rect.top
+    return pos
+  }  
+
+  addNode(nodeData) {
+    const node = createNode(nodeData)
+    this.nodes.push(node)
+    this.lastNode = node
+    return node
+  }
+
+  removeNode(node) {
+      const nodeIndex = this.nodes.indexOf(node)
+      if(nodeIndex >= 0) {
+        this.nodes.splice(nodeIndex, 1)
+      }
+      node.remove()
+  }
+
+  clearSelection() {
+    this.selectedNodes.forEach(node => {
+      node.setSelected(false)
+    })
+    this.selectedNodes = []
+  }
+
   duplicateSelectedNodes() {
     const duplicatedNodes = []
 
@@ -459,22 +480,7 @@ class NoteManager {
       node.setSelected(true)
     })
   }
-
-  addNode(nodeData) {
-    const node = createNode(nodeData)
-    this.nodes.push(node)
-    this.lastNode = node
-    return node
-  }
-
-  removeNode(node) {
-      const nodeIndex = this.nodes.indexOf(node)
-      if(nodeIndex >= 0) {
-        this.nodes.splice(nodeIndex, 1)
-      }
-      node.remove()
-  }
-
+  
   selectAllNodes() {
     this.clearSelection()
 
@@ -527,6 +533,13 @@ class NoteManager {
     }
   }
 
+  clearAllNodes() {
+    for(let i=this.nodes.length-1; i>=0; i--) {
+      let node = this.nodes[i]
+      this.removeNode(node)
+    }    
+  }  
+
   undo() {
     const nodeDatas = this.editHistory.undo()
     if( nodeDatas != null ) {
@@ -541,12 +554,13 @@ class NoteManager {
     }
   }
 
-  clearAllNodes() {
-    for(let i=this.nodes.length-1; i>=0; i--) {
-      let node = this.nodes[i]
-      this.removeNode(node)
-    }    
-  }
+  storeState() {
+    const nodeDatas = []
+    this.nodes.forEach(node => {
+      nodeDatas.push(node.data)
+    })
+    this.editHistory.addHistory(nodeDatas)
+  }  
 
   applyNodeDatas(nodeDatas) {
     this.clearAllNodes()
@@ -554,14 +568,6 @@ class NoteManager {
     nodeDatas.forEach(nodeData => {
       this.addNode(nodeData)
     })
-  }
-
-  storeState() {
-    const nodeDatas = []
-    this.nodes.forEach(node => {
-      nodeDatas.push(node.data)
-    })
-    this.editHistory.addHistory(nodeDatas)
   }
 
   saveSub(path) {
@@ -624,12 +630,6 @@ class NoteManager {
       }
     })
     this.filePath = path
-  }
-
-  onResize() {
-    const svg = document.getElementById('svg')
-    svg.setAttribute('width', window.innerWidth)
-    svg.setAttribute('height', window.innerHeight)
   }
 }
 

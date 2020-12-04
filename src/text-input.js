@@ -1,4 +1,3 @@
-const {clone} = require('./utils')
 const {getElementDimension, renderMathOnPos} = require('./text-utils')
 
 // 全角を2文字としてカウントする文字列カウント
@@ -106,7 +105,7 @@ class TextInput {
   }
 
   show(data) {
-    this.data = clone(data)
+    this.data = data
     this.input.value = this.data.text
     
     this.updateInputSize()
