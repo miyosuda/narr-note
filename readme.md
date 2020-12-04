@@ -1,14 +1,20 @@
-
-## Develop
+## Initial setup
 
 ```
-npm start
+$ npm install
+```
+
+## Development
+
+```
+$ npm start
 ```
 
 ## Build
 
-### Mac
+### MacOSX
 
 ```
-node_modules/.bin/electron-builder --mac --x64
+$ node_modules/.bin/electron-builder --mac --x64
 ```
+
