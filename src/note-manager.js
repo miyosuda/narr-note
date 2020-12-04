@@ -1,7 +1,7 @@
 const fs = require('fs')
 const ipc = require('electron').ipcRenderer
 
-const {NODE_TYPE_NONE, NODE_TYPE_TEXT, NODE_TYPE_RECT, NODE_TYPE_LINE, NodeData} = require('./data')
+const {NODE_TYPE_NONE, NODE_TYPE_TEXT, NODE_TYPE_RECT, NODE_TYPE_LINE, NodeData, NoteData} = require('./data')
 const {clone} = require('./utils')
 const {TextInput} = require('./text-input')
 const {Area, AreaSelection} = require('./area')
@@ -40,6 +40,7 @@ class NoteManager {
     this.selectedNodes = []
     this.selectedAnchor = null
     this.nodes = []
+    this.noteData = new NoteData()
     this.nodeEditied = false
     this.editHistory = new EditHistory()
     this.lastNode = null
@@ -270,7 +271,7 @@ class NoteManager {
         dragMode = DRAG_AREA
         // Nodeドラッグは開始しない.
         // エリア選択も開始.
-        // 全nodeのselected状態はそのままキープ        
+        // 全nodeのselected状態はそのままキープ
       } else {
         dragMode = DRAG_AREA
         // エリア選択開始
@@ -427,18 +428,22 @@ class NoteManager {
   }  
 
   addNode(nodeData) {
+    // TODO: 整理
     const node = createNode(nodeData)
+    this.noteData.addNode(nodeData)
     this.nodes.push(node)
     this.lastNode = node
     return node
   }
 
   removeNode(node) {
-      const nodeIndex = this.nodes.indexOf(node)
-      if(nodeIndex >= 0) {
-        this.nodes.splice(nodeIndex, 1)
-      }
-      node.remove()
+    // TODO: 整理
+    const nodeIndex = this.nodes.indexOf(node)
+    if(nodeIndex >= 0) {
+      this.nodes.splice(nodeIndex, 1)
+    }
+    node.remove()
+    this.noteData.removeNode(node.data)
   }
 
   clearSelection() {
@@ -541,48 +546,30 @@ class NoteManager {
   }  
 
   undo() {
-    const nodeDatas = this.editHistory.undo()
-    if( nodeDatas != null ) {
-      this.applyNodeDatas(nodeDatas)
-    }
+    const noteData = this.editHistory.undo()
+    this.applyNodeDatas(noteData)
   }
 
   redo() {
-    const nodeDatas = this.editHistory.redo()
-    if( nodeDatas != null ) {
-      this.applyNodeDatas(nodeDatas)
-    }
+    const noteData = this.editHistory.redo()
+    this.applyNodeDatas(noteData)
   }
 
   storeState() {
-    const nodeDatas = []
-    this.nodes.forEach(node => {
-      nodeDatas.push(node.data)
-    })
-    this.editHistory.addHistory(nodeDatas)
+    this.editHistory.addHistory(this.noteData)
   }  
 
-  applyNodeDatas(nodeDatas) {
+  applyNodeDatas(noteData) {
     this.clearAllNodes()
-
+    const nodeDatas = noteData.getCurretNodeDatas()
     nodeDatas.forEach(nodeData => {
       this.addNode(nodeData)
     })
+    this.noteData = noteData
   }
 
   saveSub(path) {
-    const DATA_VERSION = 1
-    
-    const nodeDatas = []
-    this.nodes.forEach(node => {
-      nodeDatas.push(node.data)
-    })
-    const data = {
-      'version': DATA_VERSION,
-      'nodes': nodeDatas,
-    }
-    const json = JSON.stringify(data, null , '\t')
-    
+    const json = this.noteData.toJson()
     fs.writeFile(path, json, (error) => {
       if(error != null) {
         console.log('save error')
@@ -611,21 +598,11 @@ class NoteManager {
         return null
       }
       if(json != null) {        
-        const data = JSON.parse(json)
-        const rawNodeDatas = data.nodes
-        // NodeData classに変換する
-        const nodeDatas = []
-        rawNodeDatas.forEach(rawNodeData => {
-          const nodeData = new NodeData()
-          const rawNodeDataEntries = Object.entries(rawNodeData)
-          rawNodeDataEntries.map( e => {
-            nodeData[e[0]] = e[1]
-          } )
-          nodeDatas.push(nodeData)
-        })
+        const noteData = new NoteData();
+        noteData.fromJson(json)
         this.clearAllNodes()
         this.init()
-        this.applyNodeDatas(nodeDatas)
+        this.applyNodeDatas(noteData)
         this.storeState()
       }
     })
