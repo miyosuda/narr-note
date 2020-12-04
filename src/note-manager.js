@@ -159,6 +159,10 @@ class NoteManager {
       this.load()
       // MacのCommand + oのデフォルトの挙動を防ぐ
       e.preventDefault()
+    } else if( (e.key === 'a' && e.metaKey) ) {
+      this.selectAllNodes()
+      // MacのCommand + oのデフォルトの挙動を防ぐ
+      e.preventDefault()
     }    
   }
 
@@ -463,6 +467,15 @@ class NoteManager {
       node.remove()
   }
 
+  selectAllNodes() {
+    this.clearSelection()
+
+    this.nodes.forEach(node => {
+      node.setSelected(true)
+      this.selectedNodes.push(node)
+    })
+  }
+
   undo() {
     const nodeDatas = this.editHistory.undo()
     if( nodeDatas != null ) {
@@ -507,7 +520,7 @@ class NoteManager {
       'version': DATA_VERSION,
       'nodes': nodeDatas,
     }
-    const json = JSON.stringify(data)
+    const json = JSON.stringify(data, null , '\t')
     
     fs.writeFile(path, json, (error) => {
       if(error != null) {
