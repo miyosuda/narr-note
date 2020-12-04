@@ -12,9 +12,6 @@ class TextNode {
     foreignObject.x.baseVal.value = this.data.x
     foreignObject.y.baseVal.value = this.data.y
 
-    // TODO: class指定
-    //foreignObject.classList.add("text_h1") //..
-
     let g = document.getElementById('nodes')
     g.appendChild(foreignObject)
     
@@ -38,9 +35,12 @@ class TextNode {
 
   prepare() {
     const headerLevel = render(this.data.text, this.foreignObject)
-    const className = "text_h" + headerLevel
-    this.foreignObject.classList.add(className) //..
 
+    let className = null
+    if( headerLevel > 0) {      
+      className = "text_h" + headerLevel
+      this.foreignObject.classList.add(className)
+    }
     const dims = getElementDimension(this.foreignObject.innerHTML, className)
     this.foreignObject.width.baseVal.value = dims.width
     this.foreignObject.height.baseVal.value = dims.height

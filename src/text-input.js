@@ -134,7 +134,7 @@ class TextInput {
   updateInputSize() {
     // テキストが変化した
     let [stringLength, rows] = getStringLengthAndRow(this.input.value)
-    this.input.style.width = (stringLength * 10) + "px"
+    this.input.style.width = (stringLength * 11 + 10) + "px"
     this.input.setAttribute('rows', rows)
   }
 

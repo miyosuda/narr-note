@@ -43,7 +43,7 @@ const render = (text, element) => {
         span.textContent = localText
         element.appendChild(span)
 
-        if( localTexts.length > 1 ) {
+        if( localTexts.length > 1 && j != localTexts.length-1 ) {
           let br = document.createElement('br')
           element.appendChild(br)
         }
