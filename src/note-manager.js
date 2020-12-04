@@ -30,6 +30,10 @@ const DRAG_AREA = 2
 
 class NoteManager {
   constructor() {
+    this.init()
+  }
+
+  init() {
     this.isDragging = false
     this.dragStartX = 0
     this.dragStartY = 0
@@ -38,7 +42,9 @@ class NoteManager {
     this.nodes = []
     this.nodeEditied = false
     this.editHistory = new EditHistory()
-  }
+    this.lastNode = null
+    this.copiedNodeDatas = []
+  }  
 
   prepare() {
     this.onResize()
@@ -49,7 +55,6 @@ class NoteManager {
     document.body.addEventListener('keydown',  event => this.onKeyDown(event))
     document.body.addEventListener('dblclick', evenet => this.onDoubleClick(event))
 
-    this.lastNode = null
     this.textInput = new TextInput(this)
     this.areaSelection = new AreaSelection()
 
@@ -141,29 +146,32 @@ class NoteManager {
       this.deleteSelectedNodes()
     } else if( (e.key === 'd' && e.ctrlKey) || (e.key === 'd' && e.metaKey) ) {
       this.duplicateSelectedNodes()
-      // MacのCommand + Dのデフォルトの挙動を防ぐ
-      e.preventDefault()
+      e.preventDefault() // MacのCommand + Dのデフォルトの挙動を防ぐ
     } else if( (e.key === 'z' && e.ctrlKey) || (e.key === 'z' && e.metaKey && !e.shiftKey) ) {
       this.undo()
-      // MacのCommand + Zのデフォルトの挙動を防ぐ
-      e.preventDefault()
+      e.preventDefault() // MacのCommand + Zのデフォルトの挙動を防ぐ
     } else if( (e.key === 'Z' && e.ctrlKey) || (e.key === 'z' && e.metaKey && e.shiftKey) ) {
       this.redo()
-      // MacのCommand + Zのデフォルトの挙動を防ぐ
-      e.preventDefault()
+      e.preventDefault() // MacのCommand + Zのデフォルトの挙動を防ぐ
     } else if( (e.key === 's' && e.ctrlKey) || (e.key === 's' && e.metaKey) ) {
       this.save()
-      // MacのCommand + sのデフォルトの挙動を防ぐ
-      e.preventDefault()
+      e.preventDefault() // MacのCommand + sのデフォルトの挙動を防ぐ
     } else if( (e.key === 'o' && e.ctrlKey) || (e.key === 'o' && e.metaKey) ) {
       this.load()
-      // MacのCommand + oのデフォルトの挙動を防ぐ
-      e.preventDefault()
+      e.preventDefault() // MacのCommand + oのデフォルトの挙動を防ぐ
     } else if( (e.key === 'a' && e.metaKey) ) {
       this.selectAllNodes()
-      // MacのCommand + oのデフォルトの挙動を防ぐ
       e.preventDefault()
-    }    
+    } else if( (e.key === 'c' && e.metaKey) ) {
+      this.copyNodes()
+      e.preventDefault()
+    } else if( (e.key === 'v' && e.metaKey) ) {
+      this.pasteNodes()
+      e.preventDefault()
+    } else if( (e.key === 'x' && e.metaKey) ) {
+      this.cutNodes()
+      e.preventDefault()
+    }
   }
 
   findPickNode(x, y) {
@@ -476,6 +484,49 @@ class NoteManager {
     })
   }
 
+  copyNodes() {
+    if( this.selectedNodes.length > 0 ) {
+      this.copiedNodeDatas = []
+      this.selectedNodes.forEach(node => {
+        const newData = clone(node.data)
+        this.copiedNodeDatas.push(newData)
+      })
+    }
+  }
+
+  pasteNodes() {
+    let pasted = false
+
+    const copiedNodes = []
+    
+    this.copiedNodeDatas.forEach(nodeData => {
+      const newNode = this.addNode(nodeData)
+      copiedNodes.push(newNode)
+      pasted = true
+    })
+    
+    if( pasted ) {
+      // undoバッファ対応
+      this.storeState()
+    }
+
+    // 選択状態をクリア
+    this.clearSelection()
+
+    // 複製ノードを選択状態にしておく
+    this.selectedNodes = copiedNodes
+    this.selectedNodes.forEach(node => {
+      node.setSelected(true)
+    })
+  }
+
+  cutNodes() {
+    if( this.selectedNodes.length > 0 ) {
+      this.copyNodes()
+      this.deleteSelectedNodes()
+    }
+  }
+
   undo() {
     const nodeDatas = this.editHistory.undo()
     if( nodeDatas != null ) {
@@ -490,11 +541,15 @@ class NoteManager {
     }
   }
 
-  applyNodeDatas(nodeDatas) {
+  clearAllNodes() {
     for(let i=this.nodes.length-1; i>=0; i--) {
       let node = this.nodes[i]
       this.removeNode(node)
-    }
+    }    
+  }
+
+  applyNodeDatas(nodeDatas) {
+    this.clearAllNodes()
 
     nodeDatas.forEach(nodeData => {
       this.addNode(nodeData)
@@ -549,7 +604,7 @@ class NoteManager {
         console.log('file open error')
         return null
       }
-      if(json != null) {
+      if(json != null) {        
         const data = JSON.parse(json)
         const rawNodeDatas = data.nodes
         // NodeData classに変換する
@@ -562,7 +617,10 @@ class NoteManager {
           } )
           nodeDatas.push(nodeData)
         })
+        this.clearAllNodes()
+        this.init()
         this.applyNodeDatas(nodeDatas)
+        this.storeState()
       }
     })
     this.filePath = path
@@ -571,7 +629,7 @@ class NoteManager {
   onResize() {
     const svg = document.getElementById('svg')
     svg.setAttribute('width', window.innerWidth)
-    svg.setAttribute('height', window.innerHeight)    
+    svg.setAttribute('height', window.innerHeight)
   }
 }
 
