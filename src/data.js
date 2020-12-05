@@ -164,6 +164,11 @@ class NodeData {
       return defaultColor
     }
   }
+
+  shiftPosForCopy() {
+    this.x += 10
+    this.y += 10
+  }
 }
 
 

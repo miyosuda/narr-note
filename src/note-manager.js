@@ -460,9 +460,9 @@ class NoteManager {
     
     this.selectedNodes.forEach(node => {
       const newData = clone(node.data)
-      newData.x += 10
-      newData.y += 10
-
+      // 位置をずらす
+      newData.shiftPosForCopy()
+      
       // TODO: 画面外に出ない様にする対応
       
       // 新規にノードを追加
@@ -511,7 +511,11 @@ class NoteManager {
     const copiedNodes = []
     
     this.copiedNodeDatas.forEach(nodeData => {
-      const newNode = this.addNode(nodeData)
+      // pasteを複数回繰り返せるのでcloneをしておく      
+      const clonedNodeData = clone(nodeData)
+      // 位置をずらす
+      clonedNodeData.shiftPosForCopy()
+      const newNode = this.addNode(clonedNodeData)
       copiedNodes.push(newNode)
       pasted = true
     })
@@ -542,7 +546,7 @@ class NoteManager {
     for(let i=this.nodes.length-1; i>=0; i--) {
       let node = this.nodes[i]
       this.removeNode(node)
-    }    
+    }
   }  
 
   undo() {
