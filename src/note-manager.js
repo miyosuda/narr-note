@@ -439,8 +439,9 @@ class NoteManager {
   onTextDecided(data) {
     // テキストが空文字ならばノードを追加しない
     if( data.text != "" ) {
-      // Image nodeは画像をロードした後、
-      if( data.type == NODE_TYPE_IMAGE ) {
+      // TODO: 要refactor
+      if( data.type == NODE_TYPE_IMAGE && data.width < 0 ) {
+        // Image nodeで画像をロード後のwidth取得等が必要な場合
         const image = new Image()
         image.addEventListener('load', () => {
           data.width = image.width

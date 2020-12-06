@@ -141,13 +141,14 @@ class NodeData {
     
     if(imageMatchResult != null) {
       const path = imageMatchResult[1]
-      // width, height, aspectRatio は画像ロード後にセットする
-      // TODO: ダブルクリックで既存のimageを編集した時の対応が必要
-      this.width = 0
-      this.height = 0
-      this.aspectRatio = 0.0
-      this.path = path
-      
+      if( this.type != NODE_TYPE_IMAGE || this.path != path ) {
+        // ダブルクリックで既存のimageを編集した場合以外の時
+        // width, height, aspectRatio は画像ロード後にセットする
+        this.width = -1
+        this.height = -1
+        this.aspectRatio = 0.0
+        this.path = path
+      }
       this.clearProperties(NODE_TYPE_IMAGE)
       this.type = NODE_TYPE_IMAGE
       return true
