@@ -1,7 +1,13 @@
 const fs = require('fs')
 const ipc = require('electron').ipcRenderer
 
-const {NODE_TYPE_NONE, NODE_TYPE_TEXT, NODE_TYPE_RECT, NODE_TYPE_LINE, NodeData, NoteData} = require('./data')
+const {NODE_TYPE_NONE,
+       NODE_TYPE_TEXT,
+       NODE_TYPE_RECT,
+       NODE_TYPE_LINE,
+       NODE_TYPE_IMAGE,
+       NodeData,
+       NoteData} = require('./data')
 const {clone} = require('./utils')
 const {TextInput} = require('./text-input')
 const {Area, AreaSelection} = require('./area')
@@ -9,6 +15,7 @@ const {EditHistory} = require('./edit-history')
 const {TextNode} = require('./node/text')
 const {RectNode} = require('./node/rect')
 const {LineNode} = require('./node/line')
+const {ImageNode} = require('./node/image')
 
 
 const createNode = (data) => {
@@ -18,6 +25,8 @@ const createNode = (data) => {
     return new RectNode(data)
   } else if( data.type == NODE_TYPE_LINE ) {
     return new LineNode(data)
+  } else if( data.type == NODE_TYPE_IMAGE ) {
+    return new ImageNode(data)
   } else {
     return null
   }
@@ -55,6 +64,16 @@ class NoteManager {
     document.onmousemove = event => this.onMouseMove(event)
     document.body.addEventListener('keydown',  event => this.onKeyDown(event))
     document.body.addEventListener('dblclick', evenet => this.onDoubleClick(event))
+
+    document.ondragover = document.ondrop = event => {
+      event.preventDefault()
+    }
+    document.body.addEventListener('drop', event => this.onDrop(event))
+    /*
+    document.ondragover = document.ondrop = event => {
+      event.preventDefault()
+    }
+    */
 
     this.textInput = new TextInput(this)
     this.areaSelection = new AreaSelection()
@@ -399,13 +418,44 @@ class NoteManager {
       this.storeState()
     }
   }
-
+  
+  onDrop(e) {
+    const pos = this.getLocalPos(e)
+    const x = pos.x
+    const y = pos.y
+    
+    const file = e.dataTransfer.files[0]
+    const path = file.path
+    if( path.endsWith('.png') ||
+        path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ) {
+      const data = new NodeData(x, y, "")
+      const text = '!(' + path + ')'
+      data.setText(text)
+      this.onTextDecided(data)
+    }
+  }
+  
   onTextDecided(data) {
     // テキストが空文字ならばノードを追加しない
     if( data.text != "" ) {
-      this.addNode(data)
-      // undoバッファ対応
-      this.storeState()
+      // Image nodeは画像をロードした後、
+      if( data.type == NODE_TYPE_IMAGE ) {
+        const image = new Image()
+        image.addEventListener('load', () => {
+          data.width = image.width
+          data.height = image.height
+          data.aspectRatio = image.height / image.width
+          this.addNode(data)
+          // undoバッファ対応
+          this.storeState()
+        }, false)
+        image.src = data.path
+      } else {
+        this.addNode(data)
+        // undoバッファ対応
+        this.storeState()
+      }
     }
   }
 
@@ -425,7 +475,7 @@ class NoteManager {
     pos.x = x - rect.left
     pos.y = y - rect.top
     return pos
-  }  
+  }
 
   addNode(nodeData) {
     // TODO: 整理

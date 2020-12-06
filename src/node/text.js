@@ -1,4 +1,3 @@
-const {Anchor} = require('../anchor')
 const {Area} = require('../area')
 const {getElementDimension, render} = require('../text-utils')
 

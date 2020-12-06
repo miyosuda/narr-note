@@ -66,7 +66,11 @@ textarea:focus {
   padding: 0;
 }
 
-
+/* image node */
+img {
+  user-select: none;
+  pointer-events: none;
+}
 
 .text_h1 {
   font-size: 32px;
@@ -92,3 +96,5 @@ textarea:focus {
   font-size: 13.28px;
   font-weight: bold;
 }
+
+

@@ -1,9 +1,10 @@
 const {clone, cloneArray} = require('./utils')
 
-const NODE_TYPE_NONE = 0
-const NODE_TYPE_TEXT = 1
-const NODE_TYPE_RECT = 2
-const NODE_TYPE_LINE = 3
+const NODE_TYPE_NONE  = 0
+const NODE_TYPE_TEXT  = 1
+const NODE_TYPE_RECT  = 2
+const NODE_TYPE_LINE  = 3
+const NODE_TYPE_IMAGE = 4
 
 
 class NodeData {
@@ -28,6 +29,9 @@ class NodeData {
       return
     }
     if( this.setCheckLine(text) ) {
+      return
+    }
+    if( this.setCheckImage(text) ) {
       return
     }
 
@@ -58,7 +62,7 @@ class NodeData {
         this.height = 50
       }
 
-      this.clearLineProperties()
+      this.clearProperties(NODE_TYPE_RECT)
 
       this.rounded = rounded
       this.color = this.getColor(rectMatchResult[2], '#FF0000')
@@ -118,7 +122,7 @@ class NodeData {
         this.width = 100
         this.height = 0
       }
-      this.clearRectProperties()
+      this.clearProperties(NODE_TYPE_LINE)
       
       this.type = NODE_TYPE_LINE
       this.startArrow = startArrow
@@ -128,6 +132,40 @@ class NodeData {
       return true
     } else {
       return false
+    }
+  }
+
+  setCheckImage(text) {
+    const imagePattern = /^!\((.*)\)/
+    const imageMatchResult = text.match(imagePattern)
+    
+    if(imageMatchResult != null) {
+      const path = imageMatchResult[1]
+      // width, height, aspectRatio は画像ロード後にセットする
+      // TODO: ダブルクリックで既存のimageを編集した時の対応が必要
+      this.width = 0
+      this.height = 0
+      this.aspectRatio = 0.0
+      this.path = path
+      
+      this.clearProperties(NODE_TYPE_IMAGE)
+      this.type = NODE_TYPE_IMAGE
+      return true
+    } else {
+      return false
+    }
+  }
+
+  clearProperties(keepType) {
+    if( keepType == NODE_TYPE_RECT ) {
+      this.clearLineProperties()
+      this.clearImageProperties()
+    } else if( keepType == NODE_TYPE_LINE ) {
+      this.clearRectProperties()
+      this.clearImageProperties()
+    } else if( keepType == NODE_TYPE_IMAGE ) {
+      this.clearLineProperties()
+      this.clearRectProperties()
     }
   }
 
@@ -143,6 +181,12 @@ class NodeData {
     // Rectで利用するプロパティの削除
     delete this.rounded
     delete this.color
+  }
+
+  clearImageProperties() {
+    // Imageで利用するプロパティの削除
+    delete this.aspectRatio
+    delete this.path
   }
 
   getColor(colorCode, defaultColor) {
@@ -279,6 +323,7 @@ module.exports = {
   NODE_TYPE_TEXT,
   NODE_TYPE_RECT,
   NODE_TYPE_LINE,
+  NODE_TYPE_IMAGE,
   NodeData,
   NoteData,
 }
