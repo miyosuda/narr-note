@@ -69,11 +69,6 @@ class NoteManager {
       event.preventDefault()
     }
     document.body.addEventListener('drop', event => this.onDrop(event))
-    /*
-    document.ondragover = document.ondrop = event => {
-      event.preventDefault()
-    }
-    */
 
     this.textInput = new TextInput(this)
     this.areaSelection = new AreaSelection()
@@ -241,7 +236,7 @@ class NoteManager {
     // マウスが乗った物のなから一番小さい物をまずpick対象として選ぶ
     let pickNode = this.findPickNode(x, y)
 
-    let dragMode = DRAG_NONE    
+    let dragMode = DRAG_NONE
     const shitDown = e.shiftKey
     let clearSelection = false
     
@@ -388,7 +383,8 @@ class NoteManager {
       } else {
         if( this.selectedAnchor != null ) {
           // アンカーを移動
-          this.selectedAnchor.onDrag(dx, dy)
+          const shiftDown = e.shiftKey
+          this.selectedAnchor.onDrag(dx, dy, shiftDown)
           // mouseUp時にundoバッファ対応
           this.nodeEditied = true
         } else {

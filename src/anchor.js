@@ -1,6 +1,43 @@
 const ANCHOR_WIDTH = 5
 
 
+const calcPerpendicularPoint = (sx, sy, ex, ey, px, py) => {
+  // 垂線の足を求める
+  let rx = null
+  let ry = null
+  
+  if(sx == ex) {
+    // 線分が垂直の場合
+    rx = sx
+    ry = py
+  } else if(sy == ey) {
+    // 線分が水平の場合
+    rx = px
+    ry = sy
+  } else{
+    // それ以外
+    // 線分の傾き
+    const m1 = (ey - sy) / (ex - sx)
+    // 線分のY切片
+    const b1 = sy - (m1 * sx)
+    
+    // 点ptを通り、線分lineに垂直な線の傾き
+    const m2 = -1.0 / m1
+    // 点ptを通り、線分lineに垂直な線のY切片
+    const b2 = py - (m2 * px)
+
+    // 交点算出
+    rx = (b2 - b1) / (m1 - m2)
+    ry = (b2 * m1 - b1 * m2) / (m1 - m2)
+  }
+  
+  const pos = {}
+  pos.x = rx
+  pos.y = ry
+  return pos
+}
+
+
 class Anchor {
   constructor(node, data) {
     this.data = data
@@ -78,45 +115,143 @@ class Anchor {
     }
   }
 
-  onDrag(dx, dy) {
+  isDiagonal() {
+    if( (this.data.left && this.data.top) ||
+        (this.data.right && this.data.top) ||
+        (this.data.right && this.data.bottom) ||
+        (this.data.left && this.data.bottom) ) {
+      return true
+    } else {
+      return false
+    }
+  }
+  
+  onDrag(dx, dy, shiftDown) {
+    if( shiftDown && this.isDiagonal() ) {
+      this.processDragDiagonal(dx, dy)
+    } else {
+      this.processDragNormal(dx, dy)
+    }
+  }
+
+  processDragDiagonal(dx, dy) {
+    if(this.data.left && this.data.top ) {
+      const px = this.startLeft + dx
+      const py = this.startTop + dy
+      const sx = this.node.right
+      const sy = this.node.bottom
+      const ex = this.startLeft
+      const ey = this.startTop
+      const r = calcPerpendicularPoint(sx, sy, ex, ey, px, py)
+
+      const left = r.x
+      this.setNodeLeft(left)
+      const top = r.y
+      this.setNodeTop(top)      
+
+    } else if(this.data.right && this.data.top ) {
+      const px = this.startRight + dx
+      const py = this.startTop + dy
+      const sx = this.node.left
+      const sy = this.node.bottom
+      const ex = this.startRight
+      const ey = this.startTop
+      const r = calcPerpendicularPoint(sx, sy, ex, ey, px, py)
+
+      const right = r.x
+      this.setNodeRight(right)
+      const top = r.y
+      this.setNodeTop(top)
+      
+    } else if(this.data.right && this.data.bottom ) {
+      const px = this.startRight + dx
+      const py = this.startBottom + dy
+      const sx = this.node.left
+      const sy = this.node.top
+      const ex = this.startRight
+      const ey = this.startBottom
+      const r = calcPerpendicularPoint(sx, sy, ex, ey, px, py)
+      
+      const right = r.x
+      this.setNodeRight(right)
+      const bottom = r.y
+      this.setNodeBottom(bottom)
+      
+    } else if(this.data.left && this.data.bottom ) {
+      const px = this.startLeft + dx
+      const py = this.startBottom + dy
+      const sx = this.node.right
+      const sy = this.node.top
+      const ex = this.startLeft
+      const ey = this.startBottom
+      const r = calcPerpendicularPoint(sx, sy, ex, ey, px, py)
+
+      const left = r.x
+      this.setNodeLeft(left)
+      const bottom = r.y
+      this.setNodeBottom(bottom)
+      
+    }
+
+    this.node.applyPos()
+    this.node.applyWH()
+  }
+  
+  processDragNormal(dx, dy) {
     if(this.data.left) {
       let left = this.startLeft + dx
-      if(!this.data.allowMinusWH) {
-        if(left > this.node.right) {
-          left = this.node.right
-        }
-      }
-      this.node.setLeft(left)
+      this.setNodeLeft(left)
     }
     if(this.data.right) {
       let right = this.startRight + dx
-      if(!this.data.allowMinusWH) {
-        if(right < this.node.left) {
-          right = this.node.left
-        }
-      }
-      this.node.setRight(right)
+      this.setNodeRight(right)
     }
     if(this.data.top) {
       let top = this.startTop + dy
-      if(!this.data.allowMinusWH) {
-        if(top > this.node.bottom) {
-          top = this.node.bottom
-        }
-      }
-      this.node.setTop(top)
+      this.setNodeTop(top)
     }
     if(this.data.bottom) {
       let bottom = this.startBottom + dy
-      if(!this.data.allowMinusWH) {
-        if(bottom < this.node.top) {
-          bottom = this.node.top
-        }
-      }
-      this.node.setBottom(bottom)
+      this.setNodeBottom(bottom)
     }
     this.node.applyPos()
     this.node.applyWH()
+  }
+
+  setNodeLeft(left) {
+    if(!this.data.allowMinusWH) {
+      if(left > this.node.right) {
+        left = this.node.right
+      }
+    }
+    this.node.setLeft(left)
+  }
+
+  setNodeRight(right) {
+    if(!this.data.allowMinusWH) {
+      if(right < this.node.left) {
+        right = this.node.left
+      }
+    }
+    this.node.setRight(right)
+  }
+
+  setNodeTop(top) {
+    if(!this.data.allowMinusWH) {
+      if(top > this.node.bottom) {
+        top = this.node.bottom
+      }
+    }
+    this.node.setTop(top)
+  }
+
+  setNodeBottom(bottom) {
+    if(!this.data.allowMinusWH) {
+      if(bottom < this.node.top) {
+        bottom = this.node.top
+      }
+    }
+    this.node.setBottom(bottom)
   }
 }
 
