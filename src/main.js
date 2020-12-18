@@ -108,22 +108,52 @@ const templateMenu = [
     label: 'Edit',
     submenu: [
       {
-        role: 'undo',
+        label: 'Undo',
+        accelerator: 'CmdOrCtrl+Z',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'undo'
+          )
+        }
       },
       {
-        role: 'redo',
+        label: 'Redo',
+        accelerator: 'CmdOrCtrl+Shift+Z',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'redo'
+          )
+        }
       },
       {
         type: 'separator',
       },
       {
-        role: 'cut',
+        label: 'Cut',
+        accelerator: 'CmdOrCtrl+X',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'cut'
+          )
+        }        
       },
       {
-        role: 'copy',
+        label: 'Copy',
+        accelerator: 'CmdOrCtrl+C',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'copy'
+          )
+        }
       },
       {
-        role: 'paste',
+        label: 'Paste',
+        accelerator: 'CmdOrCtrl+V',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'paste'
+          )
+        }
       },
       {
         type: 'separator',
@@ -139,9 +169,15 @@ const templateMenu = [
       },
       {
         type: 'separator',
-      },      
+      },
       {
-        role: 'selectall',
+        label: 'Select All',
+        accelerator: 'CmdOrCtrl+A',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'selectall'
+          )
+        }
       },
     ]
   },

@@ -95,6 +95,18 @@ class NoteManager {
         this.save()
       } else if( arg == 'duplicate' ) {
         this.duplicateSelectedNodes()
+      } else if( arg == 'undo' ) {
+        this.undo()
+      } else if( arg == 'redo' ) {
+        this.redo()
+      } else if( arg == 'cut' ) {
+        this.cutNodes()
+      } else if( arg == 'copy' ) {
+        this.copyNodes()
+      } else if( arg == 'paste' ) {
+        this.pasteNodes()
+      } else if( arg == 'selectall' ) {
+        this.selectAllNodes()
       }
     })
   }
