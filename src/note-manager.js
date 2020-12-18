@@ -16,9 +16,11 @@ const {TextNode} = require('./node/text')
 const {RectNode} = require('./node/rect')
 const {LineNode} = require('./node/line')
 const {ImageNode} = require('./node/image')
+const {convertPathToRelative, convertPathToAbsolute} = require('./file-utils')
 
 
-const createNode = (data) => {
+
+const createNode = (data, noteFilePath) => {
   if( data.type == NODE_TYPE_TEXT ) {
     return new TextNode(data)
   } else if( data.type == NODE_TYPE_RECT ) {
@@ -26,8 +28,7 @@ const createNode = (data) => {
   } else if( data.type == NODE_TYPE_LINE ) {
     return new LineNode(data)
   } else if( data.type == NODE_TYPE_IMAGE ) {
-    // TODO: dataのpathが相対なら絶対パスに変換
-    return new ImageNode(data)
+    return new ImageNode(data, noteFilePath)
   } else {
     return null
   }
@@ -55,7 +56,7 @@ class NoteManager {
     this.editHistory = new EditHistory()
     this.lastNode = null
     this.copiedNodeDatas = []
-  }  
+  }
 
   prepare() {
     this.onResize()
@@ -444,13 +445,14 @@ class NoteManager {
     const y = pos.y
     
     const file = e.dataTransfer.files[0]
-    const path = file.path
-    if( path.endsWith('.png') ||
-        path.endsWith('.jpg') ||
-        path.endsWith('.jpeg') ) {
-      // TODO: pastを相対にできたらする
+    const dropFilePath = file.path
+    if( dropFilePath.endsWith('.png') ||
+        dropFilePath.endsWith('.jpg') ||
+        dropFilePath.endsWith('.jpeg') ) {
+      // pathを相対にできたらする
+      const relativePath = convertPathToRelative(dropFilePath, this.filePath)
       const data = new NodeData(x, y, "")
-      const text = '!(' + path + ')'
+      const text = '!(' + relativePath + ')'
       data.setText(text)
       this.onTextDecided(data)
     }
@@ -471,8 +473,8 @@ class NoteManager {
           // undoバッファ対応
           this.storeState()
         }, false)
-        // TODO: pathが相対なら絶対パスに変換
-        image.src = data.path
+        // pathが相対なら絶対パスに変換
+        image.src = convertPathToAbsolute(data.path, this.filePath)
       } else {
         this.addNode(data)
         // undoバッファ対応
@@ -501,7 +503,7 @@ class NoteManager {
 
   addNode(nodeData) {
     // TODO: 整理
-    const node = createNode(nodeData)
+    const node = createNode(nodeData, this.filePath)
     this.noteData.addNode(nodeData)
     this.nodes.push(node)
     this.lastNode = node

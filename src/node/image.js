@@ -1,5 +1,6 @@
 const {Anchor} = require('../anchor')
 const {Area} = require('../area')
+const {convertPathToAbsolute} = require('../file-utils')
 
 const imageAnchorData = [
   // 左上
@@ -50,7 +51,7 @@ const imageAnchorData = [
 
 
 class ImageNode {
-  constructor(data) {
+  constructor(data, noteFilePath) {
     this.data = data
     
     let ns = 'http://www.w3.org/2000/svg'
@@ -67,9 +68,10 @@ class ImageNode {
 
     let imageElement = document.createElement('img')
     this.imageElement = imageElement
-    
-    // TODO:
-    imageElement.setAttribute('src', data.path)
+
+    // pathが相対なら絶対パスに変換
+    const absolutePath = convertPathToAbsolute(data.path, noteFilePath)
+    imageElement.setAttribute('src', absolutePath)
 
     foreignObject.appendChild(imageElement)
     
