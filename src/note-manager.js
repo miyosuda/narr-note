@@ -26,6 +26,7 @@ const createNode = (data) => {
   } else if( data.type == NODE_TYPE_LINE ) {
     return new LineNode(data)
   } else if( data.type == NODE_TYPE_IMAGE ) {
+    // TODO: dataのpathが相対なら絶対パスに変換
     return new ImageNode(data)
   } else {
     return null
@@ -84,6 +85,16 @@ class NoteManager {
     ipc.on('saved-file', (event, path) => {
       if(path) {
         this.saveSub(path)
+      }
+    })
+
+    ipc.on('request', (event, arg) => {
+      if( arg == 'open-file' ) {
+        this.load()
+      } else if( arg == 'save' ) {
+        this.save()
+      } else if( arg == 'duplicate' ) {
+        this.duplicateSelectedNodes()
       }
     })
   }
@@ -425,6 +436,7 @@ class NoteManager {
     if( path.endsWith('.png') ||
         path.endsWith('.jpg') ||
         path.endsWith('.jpeg') ) {
+      // TODO: pastを相対にできたらする
       const data = new NodeData(x, y, "")
       const text = '!(' + path + ')'
       data.setText(text)
@@ -447,6 +459,7 @@ class NoteManager {
           // undoバッファ対応
           this.storeState()
         }, false)
+        // TODO: pathが相対なら絶対パスに変換
         image.src = data.path
       } else {
         this.addNode(data)
@@ -558,7 +571,7 @@ class NoteManager {
     const copiedNodes = []
     
     this.copiedNodeDatas.forEach(nodeData => {
-      // pasteを複数回繰り返せるのでcloneをしておく      
+      // pasteを複数回繰り返せるのでcloneをしておく
       const clonedNodeData = clone(nodeData)
       // 位置をずらす
       clonedNodeData.shiftPosForCopy()
@@ -652,7 +665,7 @@ class NoteManager {
         console.log('file open error')
         return null
       }
-      if(json != null) {        
+      if(json != null) {
         const noteData = new NoteData();
         noteData.fromJson(json)
         this.clearAllNodes()

@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron')
+const { app, Menu, BrowserWindow } = require('electron')
 const ipc = require('electron').ipcMain
 const dialog = require('electron').dialog
 
@@ -57,3 +57,125 @@ app.on('activate', () => {
     createWindow()
   }
 })
+
+
+// ElectronのMenuの設定
+const templateMenu = [
+  {
+    label: app.name,
+    submenu: [
+      { role: 'about' },
+      { type: 'separator' },
+      { role: 'services' },
+      { type: 'separator' },
+      { role: 'hide' },
+      { role: 'hideothers' },
+      { role: 'unhide' },
+      { type: 'separator' },
+      { role: 'quit' }
+    ]
+  },
+  {
+    label: 'File',
+    submenu: [
+      {
+        label: 'Open',
+        accelerator: 'CmdOrCtrl+O',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'open-file'
+          )
+        },
+      },
+      {
+        type: 'separator',
+      },
+      {
+        label: 'Save',
+        accelerator: 'CmdOrCtrl+S',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'save'
+          )
+        }
+      },
+      {
+        role: 'close'
+      },
+    ]
+  },
+  {
+    label: 'Edit',
+    submenu: [
+      {
+        role: 'undo',
+      },
+      {
+        role: 'redo',
+      },
+      {
+        type: 'separator',
+      },
+      {
+        role: 'cut',
+      },
+      {
+        role: 'copy',
+      },
+      {
+        role: 'paste',
+      },
+      {
+        type: 'separator',
+      },
+      {
+        label: 'Duplicate',
+        accelerator: 'CmdOrCtrl+D',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'duplicate'
+          )
+        }
+      },
+      {
+        type: 'separator',
+      },      
+      {
+        role: 'selectall',
+      },
+    ]
+  },
+  {
+    label: 'View',
+    submenu: [
+      {
+        role: 'reload',
+      },
+      {
+        type: 'separator',
+      },
+      {
+        role: 'resetzoom',
+      },
+      {
+        role: 'zoomin',
+      },
+      {
+        role: 'zoomout',
+      },
+      {
+        type: 'separator',
+      },
+      {
+        role: 'togglefullscreen',
+      },
+      {
+        role:
+        'toggleDevTools'
+      },      
+    ]
+  }
+]
+
+const menu = Menu.buildFromTemplate(templateMenu)
+Menu.setApplicationMenu(menu)

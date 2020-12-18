@@ -9,3 +9,4 @@ window.onload = () => {
 window.addEventListener( 'resize', () => {
   noteManager.onResize()
 }, false)
+
