@@ -110,6 +110,8 @@ class NoteManager {
         this.selectAllNodes()
       }
     })
+
+    this.updatePageLabel()
   }
 
   showInput(asSibling) {
@@ -190,6 +192,12 @@ class NoteManager {
       e.preventDefault()
     } else if( (e.key === 'x' && e.metaKey) ) {
       this.cutNodes()
+      e.preventDefault()
+    } else if( (e.key === 'ArrowDown') ) {
+      this.moveNextPage()
+      e.preventDefault()
+    } else if( (e.key === 'ArrowUp') ) {
+      this.movePreviousPage()
       e.preventDefault()
     }
   }
@@ -626,22 +634,22 @@ class NoteManager {
   undo() {
     const noteData = this.editHistory.undo()
     if( noteData != null ) {
-      this.applyNodeDatas(noteData)
+      this.applyNoteData(noteData)
     }
   }
 
   redo() {
     const noteData = this.editHistory.redo()
     if( noteData != null ) {
-      this.applyNodeDatas(noteData)
+      this.applyNoteData(noteData)
     }
   }
 
   storeState() {
     this.editHistory.addHistory(this.noteData)
-  }  
+  }
 
-  applyNodeDatas(noteData) {
+  applyNoteData(noteData) {
     this.clearAllNodes()
     const nodeDatas = noteData.getCurretNodeDatas()
     nodeDatas.forEach(nodeData => {
@@ -680,15 +688,38 @@ class NoteManager {
         return null
       }
       if(json != null) {
-        const noteData = new NoteData();
+        const noteData = new NoteData()
         noteData.fromJson(json)
         this.clearAllNodes()
         this.init()
-        this.applyNodeDatas(noteData)
+        this.applyNoteData(noteData)
         this.storeState()
+        this.updatePageLabel()
       }
     })
     this.filePath = path
+  }
+
+  moveNextPage() {
+    const ret = this.noteData.moveNextPage()
+    if( ret ) {
+      this.storeState()
+    }
+    this.applyNoteData(this.noteData)
+    this.updatePageLabel()
+  }
+
+  movePreviousPage() {
+    this.noteData.movePreviousPage()
+    this.applyNoteData(this.noteData)
+    this.updatePageLabel()
+  }
+
+  updatePageLabel() {
+    const page = this.noteData.currentPage
+    const footer = document.getElementById('footer')
+    const pageStr = "-" + (page + 1) + "-"
+    footer.textContent = pageStr
   }
 }
 
@@ -696,4 +727,3 @@ class NoteManager {
 module.exports = {
   NoteManager,
 }
-
