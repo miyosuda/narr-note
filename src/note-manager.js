@@ -509,23 +509,27 @@ class NoteManager {
     return pos
   }
 
-  addNode(nodeData) {
+  addNode(nodeData, applyToNote=true) {
     // TODO: 整理
     const node = createNode(nodeData, this.filePath)
-    this.noteData.addNode(nodeData)
     this.nodes.push(node)
     this.lastNode = node
+    if( applyToNote ) {
+      this.noteData.addNode(nodeData)
+    }
     return node
   }
 
-  removeNode(node) {
+  removeNode(node, applyToNote=true) {
     // TODO: 整理
     const nodeIndex = this.nodes.indexOf(node)
     if(nodeIndex >= 0) {
       this.nodes.splice(nodeIndex, 1)
     }
     node.remove()
-    this.noteData.removeNode(node.data)
+    if( applyToNote ) {
+      this.noteData.removeNode(node.data)
+    }
   }
 
   clearSelection() {
@@ -627,7 +631,8 @@ class NoteManager {
   clearAllNodes() {
     for(let i=this.nodes.length-1; i>=0; i--) {
       let node = this.nodes[i]
-      this.removeNode(node)
+      // TODO: 整理
+      this.removeNode(node, false) // noteにはremoveを反映しない
     }
   }  
 
@@ -653,7 +658,8 @@ class NoteManager {
     this.clearAllNodes()
     const nodeDatas = noteData.getCurretNodeDatas()
     nodeDatas.forEach(nodeData => {
-      this.addNode(nodeData)
+      // TODO: 整理
+      this.addNode(nodeData, false)
     })
     this.noteData = noteData
   }
