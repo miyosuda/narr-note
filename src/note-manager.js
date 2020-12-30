@@ -166,41 +166,6 @@ class NoteManager {
       e.preventDefault()
     } else if(e.key === 'Backspace' ) {
       this.deleteSelectedNodes()
-    /*
-    } else if( (e.key === 'd' && e.ctrlKey) || (e.key === 'd' && e.metaKey) ) {
-      this.duplicateSelectedNodes()
-      e.preventDefault() // MacのCommand + Dのデフォルトの挙動を防ぐ
-    } else if( (e.key === 'z' && e.ctrlKey) || (e.key === 'z' && e.metaKey && !e.shiftKey) ) {
-      this.undo()
-      e.preventDefault() // MacのCommand + Zのデフォルトの挙動を防ぐ
-    } else if( (e.key === 'Z' && e.ctrlKey) || (e.key === 'z' && e.metaKey && e.shiftKey) ) {
-      this.redo()
-      e.preventDefault() // MacのCommand + Zのデフォルトの挙動を防ぐ
-    } else if( (e.key === 's' && e.ctrlKey) || (e.key === 's' && e.metaKey) ) {
-      this.save()
-      e.preventDefault() // MacのCommand + sのデフォルトの挙動を防ぐ
-    } else if( (e.key === 'o' && e.ctrlKey) || (e.key === 'o' && e.metaKey) ) {
-      this.load()
-      e.preventDefault() // MacのCommand + oのデフォルトの挙動を防ぐ
-    } else if( (e.key === 'a' && e.metaKey) ) {
-      this.selectAll()
-      e.preventDefault()
-    } else if( (e.key === 'c' && e.metaKey) ) {
-      if( !this.textInput.isShown() ) {
-        this.copy()
-        e.preventDefault()
-      }
-    } else if( (e.key === 'v' && e.metaKey) ) {
-      if( !this.textInput.isShown() ) {
-        this.paste()
-        e.preventDefault()
-      }
-    */
-    } else if( (e.key === 'x' && e.metaKey) ) {
-      /*
-      this.cutNodes()
-      e.preventDefault()
-      */
     } else if( (e.key === 'ArrowDown') ) {
       this.moveNextPage()
       e.preventDefault()
