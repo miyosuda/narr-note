@@ -103,11 +103,11 @@ class NoteManager {
       } else if( arg == 'cut' ) {
         this.cutNodes()
       } else if( arg == 'copy' ) {
-        this.copyNodes()
+        this.copy()
       } else if( arg == 'paste' ) {
-        this.pasteNodes()
+        this.paste()
       } else if( arg == 'selectall' ) {
-        this.selectAllNodes()
+        this.selectAll()
       }
     })
 
@@ -166,6 +166,7 @@ class NoteManager {
       e.preventDefault()
     } else if(e.key === 'Backspace' ) {
       this.deleteSelectedNodes()
+    /*
     } else if( (e.key === 'd' && e.ctrlKey) || (e.key === 'd' && e.metaKey) ) {
       this.duplicateSelectedNodes()
       e.preventDefault() // MacのCommand + Dのデフォルトの挙動を防ぐ
@@ -182,17 +183,24 @@ class NoteManager {
       this.load()
       e.preventDefault() // MacのCommand + oのデフォルトの挙動を防ぐ
     } else if( (e.key === 'a' && e.metaKey) ) {
-      this.selectAllNodes()
+      this.selectAll()
       e.preventDefault()
     } else if( (e.key === 'c' && e.metaKey) ) {
-      this.copyNodes()
-      e.preventDefault()
+      if( !this.textInput.isShown() ) {
+        this.copy()
+        e.preventDefault()
+      }
     } else if( (e.key === 'v' && e.metaKey) ) {
-      this.pasteNodes()
-      e.preventDefault()
+      if( !this.textInput.isShown() ) {
+        this.paste()
+        e.preventDefault()
+      }
+    */
     } else if( (e.key === 'x' && e.metaKey) ) {
+      /*
       this.cutNodes()
       e.preventDefault()
+      */
     } else if( (e.key === 'ArrowDown') ) {
       this.moveNextPage()
       e.preventDefault()
@@ -572,7 +580,12 @@ class NoteManager {
     })
   }
   
-  selectAllNodes() {
+  selectAll() {
+    if( this.textInput.isShown() ) {    
+      document.execCommand("selectAll")
+      return
+    }
+    
     this.clearSelection()
 
     this.nodes.forEach(node => {
@@ -581,7 +594,12 @@ class NoteManager {
     })
   }
 
-  copyNodes() {
+  copy() {
+    if( this.textInput.isShown() ) {    
+      document.execCommand("copy")
+      return
+    }
+    
     if( this.selectedNodes.length > 0 ) {
       this.copiedNodeDatas = []
       this.selectedNodes.forEach(node => {
@@ -591,7 +609,12 @@ class NoteManager {
     }
   }
 
-  pasteNodes() {
+  paste() {
+    if( this.textInput.isShown() ) {    
+      document.execCommand("paste")
+      return
+    }
+    
     let pasted = false
 
     const copiedNodes = []
@@ -622,8 +645,13 @@ class NoteManager {
   }
 
   cutNodes() {
+    if( this.textInput.isShown() ) {    
+      document.execCommand("cut")
+      return
+    }
+    
     if( this.selectedNodes.length > 0 ) {
-      this.copyNodes()
+      this.copy()
       this.deleteSelectedNodes()
     }
   }
@@ -637,6 +665,11 @@ class NoteManager {
   }  
 
   undo() {
+    if( this.textInput.isShown() ) {    
+      document.execCommand("undo")
+      return
+    }
+    
     const noteData = this.editHistory.undo()
     if( noteData != null ) {
       this.applyNoteData(noteData)
@@ -644,6 +677,11 @@ class NoteManager {
   }
 
   redo() {
+    if( this.textInput.isShown() ) {    
+      document.execCommand("redo")
+      return
+    }
+    
     const noteData = this.editHistory.redo()
     if( noteData != null ) {
       this.applyNoteData(noteData)
