@@ -3,7 +3,7 @@ const ipc = require('electron').ipcMain
 const dialog = require('electron').dialog
 
 
-ipc.on('open-file-dialog', function(event) {
+ipc.on('open-file-dialog', (event) => {
   const options = {
     properties: ['openFile']
   }
@@ -13,7 +13,7 @@ ipc.on('open-file-dialog', function(event) {
   }
 })
 
-ipc.on('save-dialog', function(event) {
+ipc.on('save-dialog', (event) => {
   const options = {
     title: 'Save',
     filters: [
