@@ -101,7 +101,7 @@ class NoteManager {
       } else if( arg == 'redo' ) {
         this.redo()
       } else if( arg == 'cut' ) {
-        this.cutNodes()
+        this.cut()
       } else if( arg == 'copy' ) {
         this.copy()
       } else if( arg == 'paste' ) {
@@ -129,22 +129,55 @@ class NoteManager {
         y = this.lastNode.bottom + 10
       }
     }
+
+    // 画面外に出ない様にする処理
+    const limitX = window.innerWidth - 50
+    if( x > limitX ) {
+      x = limitX
+    }
     
-    // TODO: 画面外に出ない様にする対応
+    const limitY = window.innerHeight - 30
+    if( y > limitY ) {
+      y = limitY
+    }
     
     const data = new NodeData(x, y, "")
     this.textInput.show(data)
   }
 
+  forceSetLastNode() {
+    // 一番下のnodeをlastNodeとする
+    this.lastNode = null
+
+    this.nodes.forEach(node => {
+      if( this.lastNode == null ) {
+        this.lastNode = node
+      } else {
+        // bottomではなくtopで比較している
+        if( node.top > this.lastNode.top ) {
+          this.lastNode = node
+        }
+      }
+    })
+  }
+
   deleteSelectedNodes() {
     let deleted = false
+    let lastNodeDeleted = false
     
     this.selectedNodes.forEach(node => {
       // ノードを削除
       this.removeNode(node)
       deleted = true
+      if( node == this.lastNode ) {
+        lastNodeDeleted = true
+      }
     })
     this.seletedNodes = []
+
+    if( lastNodeDeleted ) {
+      this.forceSetLastNode()
+    }
 
     if( deleted ) {
       // undoバッファ対応
@@ -264,6 +297,7 @@ class NoteManager {
           // 他のselectedの物も含めて全selected nodeをdrag
           pickNode.setSelected(true)
           pickNode.onDragStart()
+          this.lastNode = pickNode
           this.selectedNodes.push(pickNode)
           dragMode = DRAG_NODE
           // 他のnodeのselected状態はそのままキープ
@@ -272,12 +306,14 @@ class NoteManager {
         if(pickNode.isSelected()) {
           // 他のselectedの物も含めて全selected nodeをdrag
           pickNode.onDragStart()
+          this.lastNode = pickNode
           this.selectedNodes.push(pickNode)
           dragMode = DRAG_NODE
           // 他のnodeのselected状態はそのままキープ
         } else {
           pickNode.setSelected(true)
           pickNode.onDragStart()
+          this.lastNode = pickNode
           this.selectedNodes.push(pickNode)
           dragMode = DRAG_NODE
           // 他のnodeのselected状態はクリア
@@ -373,6 +409,7 @@ class NoteManager {
               // 選択されていなかったら選択済に追加
               this.selectedNodes.push(node)
               node.setSelected(true)
+              this.lastNode = node
             }
           } else if(!shiftDown) {
             if( node.isSelected() ) {
@@ -546,7 +583,7 @@ class NoteManager {
   }
   
   selectAll() {
-    if( this.textInput.isShown() ) {    
+    if( this.textInput.isShown() ) {
       document.execCommand("selectAll")
       return
     }
@@ -609,8 +646,8 @@ class NoteManager {
     })
   }
 
-  cutNodes() {
-    if( this.textInput.isShown() ) {    
+  cut() {
+    if( this.textInput.isShown() ) {
       document.execCommand("cut")
       return
     }
@@ -627,10 +664,11 @@ class NoteManager {
       // TODO: 整理
       this.removeNode(node, false) // noteにはremoveを反映しない
     }
+    this.lastNode = null
   }  
 
   undo() {
-    if( this.textInput.isShown() ) {    
+    if( this.textInput.isShown() ) {
       document.execCommand("undo")
       return
     }
@@ -665,6 +703,8 @@ class NoteManager {
       this.addNode(nodeData, false)
     })
     this.noteData = noteData
+
+    this.forceSetLastNode()
   }
 
   saveSub(path) {
