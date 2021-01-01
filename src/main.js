@@ -1,6 +1,12 @@
-const { app, Menu, BrowserWindow } = require('electron')
+const { app, Menu, BrowserWindow, shell } = require('electron')
 const ipc = require('electron').ipcMain
 const dialog = require('electron').dialog
+
+//..
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
+//..
 
 
 ipc.on('open-file-dialog', (event) => {
@@ -30,8 +36,56 @@ ipc.on('save-dialog', (event) => {
   }
 })
 
+let lastWorkerWindow = null
 
-function createWindow () {
+ipc.on('print-to-pdf', (event, filePath) => {
+  if (lastWorkerWindow !== null) {
+    // エラーにより前回のページが残っていた場合の対処
+    lastWorkerWindow.close()
+  }
+  
+  const workerWin = new BrowserWindow({
+    show: false,
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+  workerWin.loadURL('file://' + __dirname + '/index.html')
+
+  workerWin.on('closed', () => {
+    lastWorkerWindow = null
+  })
+
+  workerWin.on('ready-to-show', () => {
+    workerWin.send('print-to-pdf', filePath)
+  })
+
+  lastWorkerWindow = workerWin
+})
+
+ipc.on('ready-print-to-pdf', (event) => {
+  const pdfPath = path.join(os.tmpdir(), 'out.pdf')
+  const win = BrowserWindow.fromWebContents(event.sender)
+
+  const options = {
+    printBackground: true
+  }
+
+  win.webContents.printToPDF({}).then(data => {
+    fs.writeFile(pdfPath, data, (err) => {
+      if( err ) {
+        throw err
+      }
+    })
+    shell.openExternal('file://' + pdfPath)
+    win.close()
+  })
+})
+
+
+const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
@@ -40,7 +94,7 @@ function createWindow () {
     }
   })
 
-  win.loadURL('file://' + __dirname + '/index.html');
+  win.loadURL('file://' + __dirname + '/index.html')
   //win.webContents.openDevTools()
 }
 
@@ -99,6 +153,15 @@ const templateMenu = [
           )
         }
       },
+      {
+        label: 'Export PDF',
+        accelerator: 'CmdOrCtrl+E',
+        click: (menuItem, browserWindow, event) => {
+          browserWindow.webContents.send(
+            'request', 'export-pdf'
+          )
+        }
+      },      
       {
         role: 'close'
       },

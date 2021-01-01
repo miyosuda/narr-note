@@ -89,6 +89,28 @@ class NoteManager {
       }
     })
 
+    ipc.on('print-to-pdf', (event, path) => {
+      // TODO: loadSub()との共通化
+      //this.loadSub(path)
+      fs.readFile(path, (error, json) => {
+        if(error != null) {
+          console.log('file open error')
+          return null
+        }
+        if(json != null) {
+          const noteData = new NoteData()
+          noteData.fromJson(json)
+          this.clearAllNodes()
+          this.init()
+          this.applyNoteData(noteData)
+          this.storeState()
+          this.updatePageLabel()
+          ipc.send("ready-print-to-pdf")
+        }
+      })
+      this.filePath = path
+    })
+
     ipc.on('request', (event, arg) => {
       if( arg == 'open-file' ) {
         this.load()
@@ -108,6 +130,8 @@ class NoteManager {
         this.paste()
       } else if( arg == 'selectall' ) {
         this.selectAll()
+      } else if( arg == 'export-pdf' ) {
+        this.exportPDF()
       }
     })
 
@@ -723,6 +747,14 @@ class NoteManager {
       ipc.send('save-dialog')
     } else {
       this.saveSub(this.filePath)
+    }
+  }
+
+  exportPDF() {
+    if( this.filePath == null ) {
+      alert('save file before exporting.')
+    } else {
+      ipc.send('print-to-pdf', this.filePath)
     }
   }
 
