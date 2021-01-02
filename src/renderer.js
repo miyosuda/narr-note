@@ -1,6 +1,6 @@
 const {NoteManager} = require('./note-manager')
 
-let noteManager = new NoteManager()
+const noteManager = new NoteManager()
 
 window.onload = () => {
   noteManager.prepare()

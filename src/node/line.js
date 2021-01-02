@@ -54,7 +54,7 @@ let nextLineId = 0
 
 
 class LineNode {
-  constructor(data) {
+  constructor(data, parentNode) {
     this.data = data
     
     const ns = 'http://www.w3.org/2000/svg'
@@ -106,8 +106,7 @@ class LineNode {
     
     this.applyWH()
     
-    let g = document.getElementById('nodes')
-    g.appendChild(element)
+    parentNode.appendChild(element)
     
     this.selected = false
     nextLineId += 1

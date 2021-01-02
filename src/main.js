@@ -52,7 +52,7 @@ ipc.on('print-to-pdf', (event, filePath) => {
       nodeIntegration: true
     }
   })
-  workerWin.loadURL('file://' + __dirname + '/index.html')
+  workerWin.loadURL('file://' + __dirname + '/index-print.html')
 
   workerWin.on('closed', () => {
     lastWorkerWindow = null
@@ -65,15 +65,22 @@ ipc.on('print-to-pdf', (event, filePath) => {
   lastWorkerWindow = workerWin
 })
 
-ipc.on('ready-print-to-pdf', (event) => {
+ipc.on('ready-print-to-pdf', (event, dims) => {
   const pdfPath = path.join(os.tmpdir(), 'out.pdf')
   const win = BrowserWindow.fromWebContents(event.sender)
 
+  console.log('dims: w=' + dims.width + ' h=' + dims.height)
+
   const options = {
-    printBackground: true
+    printBackground: true,
+    pageSize: {
+      width: parseInt(dims.width * 200),
+      height: parseInt(dims.height * 200),
+    },
+    marginsType: 1,
   }
 
-  win.webContents.printToPDF({}).then(data => {
+  win.webContents.printToPDF(options).then(data => {
     fs.writeFile(pdfPath, data, (err) => {
       if( err ) {
         throw err

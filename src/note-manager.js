@@ -20,15 +20,15 @@ const {convertPathToRelative, convertPathToAbsolute} = require('./file-utils')
 
 
 
-const createNode = (data, noteFilePath) => {
+const createNode = (data, parentNode, noteFilePath) => {
   if( data.type == NODE_TYPE_TEXT ) {
-    return new TextNode(data)
+    return new TextNode(data, parentNode)
   } else if( data.type == NODE_TYPE_RECT ) {
-    return new RectNode(data)
+    return new RectNode(data, parentNode)
   } else if( data.type == NODE_TYPE_LINE ) {
-    return new LineNode(data)
+    return new LineNode(data, parentNode)
   } else if( data.type == NODE_TYPE_IMAGE ) {
-    return new ImageNode(data, noteFilePath)
+    return new ImageNode(data, parentNode, noteFilePath)
   } else {
     return null
   }
@@ -59,6 +59,8 @@ class NoteManager {
   }
 
   prepare() {
+    this.svg = document.getElementById('svg')
+    
     this.onResize()
     
     document.onmousedown = event => this.onMouseDown(event)
@@ -87,28 +89,6 @@ class NoteManager {
       if(path) {
         this.saveSub(path)
       }
-    })
-
-    ipc.on('print-to-pdf', (event, path) => {
-      // TODO: loadSub()との共通化
-      //this.loadSub(path)
-      fs.readFile(path, (error, json) => {
-        if(error != null) {
-          console.log('file open error')
-          return null
-        }
-        if(json != null) {
-          const noteData = new NoteData()
-          noteData.fromJson(json)
-          this.clearAllNodes()
-          this.init()
-          this.applyNoteData(noteData)
-          this.storeState()
-          this.updatePageLabel()
-          ipc.send("ready-print-to-pdf")
-        }
-      })
-      this.filePath = path
     })
 
     ipc.on('request', (event, arg) => {
@@ -155,12 +135,15 @@ class NoteManager {
     }
 
     // 画面外に出ない様にする処理
-    const limitX = window.innerWidth - 50
+    const svgWidth = this.svg.width.baseVal.value
+    const svgHeight = this.svg.height.baseVal.value
+    
+    const limitX = svgWidth - 50
     if( x > limitX ) {
       x = limitX
     }
     
-    const limitY = window.innerHeight - 30
+    const limitY = svgHeight - 30
     if( y > limitY ) {
       y = limitY
     }
@@ -526,9 +509,8 @@ class NoteManager {
   }
 
   onResize() {
-    const svg = document.getElementById('svg')
-    svg.setAttribute('width', window.innerWidth)
-    svg.setAttribute('height', window.innerHeight)
+    this.svg.setAttribute('width', window.innerWidth)
+    this.svg.setAttribute('height', window.innerHeight)
   }
 
   getLocalPos(e) {
@@ -545,7 +527,8 @@ class NoteManager {
 
   addNode(nodeData, applyToNote=true) {
     // TODO: 整理
-    const node = createNode(nodeData, this.filePath)
+    const g = document.getElementById('nodes')
+    const node = createNode(nodeData, g, this.filePath)
     this.nodes.push(node)
     this.lastNode = node
     if( applyToNote ) {
@@ -684,7 +667,7 @@ class NoteManager {
 
   clearAllNodes() {
     for(let i=this.nodes.length-1; i>=0; i--) {
-      let node = this.nodes[i]
+      const node = this.nodes[i]
       // TODO: 整理
       this.removeNode(node, false) // noteにはremoveを反映しない
     }
@@ -805,6 +788,79 @@ class NoteManager {
 }
 
 
+class PrintNoteManager {
+  constructor() {
+  }
+
+  prepare() {
+    ipc.on('print-to-pdf', (event, path) => {
+      this.load(path)
+    })
+  }
+
+  load(path) {
+    fs.readFile(path, (error, json) => {
+      if(error != null) {
+        console.log('file open error')
+        return null
+      }
+      if(json != null) {
+        this.loadSub(json, path)
+      }
+    })
+  }
+
+  loadSub(json, path) {
+    const noteData = new NoteData()
+    noteData.fromJson(json)
+    
+    const ns = 'http://www.w3.org/2000/svg'
+    const pageSize = noteData.getPageSize()
+
+    const minWidth = 800
+    const minHeight = 600
+
+    const svgs = []
+    let maxX = minWidth
+    let maxY = minHeight
+    
+    for(let i=0; i<pageSize; ++i) {
+      const svg = document.createElementNS(ns, 'svg')
+      svgs.push(svg)
+      
+      svg.setAttribute('width', minWidth)
+      svg.setAttribute('height', minHeight)
+      document.body.appendChild(svg)
+      
+      const canvas = document.createElementNS(ns, 'g')
+      svg.appendChild(canvas)
+      
+      const g = document.createElementNS(ns, 'g')
+      canvas.appendChild(g)
+
+      const nodeDatas = noteData.getNodeDatas(i)
+
+      nodeDatas.forEach(nodeData => {
+        const node = createNode(nodeData, g, path)
+        maxX = Math.max(maxX, node.right, node.left)
+        maxY = Math.max(maxY, node.bottom, node.top)
+      })
+    }
+    
+    svgs.forEach(svg => {
+      svg.setAttribute('width', maxX)
+      svg.setAttribute('height', maxY)
+    })
+    
+    const dims = {}
+    dims.width = maxX
+    dims.height = maxY
+    
+    ipc.send("ready-print-to-pdf", dims)
+  }
+}
+
 module.exports = {
   NoteManager,
+  PrintNoteManager,
 }

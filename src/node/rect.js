@@ -95,7 +95,7 @@ const rectAnchorData = [
 
 
 class RectNode {
-  constructor(data) {
+  constructor(data, parentNode) {
     this.data = data
     
     let ns = 'http://www.w3.org/2000/svg'
@@ -125,8 +125,7 @@ class RectNode {
 
     this.applyWH()
     
-    let g = document.getElementById('nodes')
-    g.appendChild(element)
+    parentNode.appendChild(element)
     
     this.selected = false
   }

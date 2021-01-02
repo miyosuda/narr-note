@@ -3,7 +3,7 @@ const {getElementDimension, render} = require('../text-utils')
 
 
 class TextNode {
-  constructor(data) {
+  constructor(data, parentNode) {
     this.data = data
     
     let ns = 'http://www.w3.org/2000/svg'
@@ -11,8 +11,7 @@ class TextNode {
     foreignObject.x.baseVal.value = this.data.x
     foreignObject.y.baseVal.value = this.data.y
 
-    let g = document.getElementById('nodes')
-    g.appendChild(foreignObject)
+    parentNode.appendChild(foreignObject)
     
     this.foreignObject = foreignObject
     

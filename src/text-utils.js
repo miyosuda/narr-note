@@ -16,13 +16,13 @@ const getElementDimension = (html, className=null) => {
   
   document.body.append(element)
   
-  const dimensions = {}
+  const dims = {}
   // 上下左右2px幅を広げている
-  dimensions.width = element.getBoundingClientRect().width + 2
-  dimensions.height = element.getBoundingClientRect().height + 2
+  dims.width = element.getBoundingClientRect().width + 2
+  dims.height = element.getBoundingClientRect().height + 2
 
   element.remove()
-  return dimensions
+  return dims
 }
 
 

@@ -312,8 +312,16 @@ class NoteData {
   }
 
   getCurretNodeDatas() {
-    const pageData = this.pages[this.currentPage]
+    return this.getNodeDatas(this.currentPage)
+  }
+
+  getNodeDatas(page) {
+    const pageData = this.pages[page]
     return pageData.getNodeDatas()
+  }
+
+  getPageSize() {
+    return this.pages.length
   }
 
   toJson() {

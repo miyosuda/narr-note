@@ -51,7 +51,7 @@ const imageAnchorData = [
 
 
 class ImageNode {
-  constructor(data, noteFilePath) {
+  constructor(data, parentNode, noteFilePath) {
     this.data = data
     
     let ns = 'http://www.w3.org/2000/svg'
@@ -85,8 +85,7 @@ class ImageNode {
 
     this.applyWH()
     
-    let g = document.getElementById('nodes')
-    g.appendChild(element)
+    parentNode.appendChild(element)
     
     this.selected = false
   }
