@@ -80,8 +80,6 @@ ipc.on('print-to-pdf', (event, arg) => {
 ipc.on('ready-print-to-pdf', (event, dims) => {
   const win = BrowserWindow.fromWebContents(event.sender)
 
-  console.log('dims: w=' + dims.width + ' h=' + dims.height)
-
   const options = {
     printBackground: true,
     pageSize: {

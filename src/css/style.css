@@ -1,3 +1,7 @@
+svg {
+  page-break-after: always;
+}
+
 /* getElementDimension()でのサイズが2回目以降で異なる場合の為のworkaround */
 .node-text_selected {
   background: #cfcfcf;
