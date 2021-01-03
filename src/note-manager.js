@@ -734,11 +734,12 @@ class NoteManager {
   }
 
   exportPDF() {
-    if( this.filePath == null ) {
-      alert('save file before exporting.')
-    } else {
-      ipc.send('print-to-pdf', this.filePath)
+    const json = this.noteData.toJson()
+    const arg = {
+      filePath: this.filePath,
+      json: json,
     }
+    ipc.send('print-to-pdf', arg)
   }
 
   load() {
@@ -793,24 +794,12 @@ class PrintNoteManager {
   }
 
   prepare() {
-    ipc.on('print-to-pdf', (event, path) => {
-      this.load(path)
+    ipc.on('print-to-pdf', (event, arg) => {
+      this.load(arg.json, arg.filePath)
     })
   }
 
-  load(path) {
-    fs.readFile(path, (error, json) => {
-      if(error != null) {
-        console.log('file open error')
-        return null
-      }
-      if(json != null) {
-        this.loadSub(json, path)
-      }
-    })
-  }
-
-  loadSub(json, path) {
+  load(json, path) {
     const noteData = new NoteData()
     noteData.fromJson(json)
     

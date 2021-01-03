@@ -1,12 +1,7 @@
 const { app, Menu, BrowserWindow, shell } = require('electron')
 const ipc = require('electron').ipcMain
 const dialog = require('electron').dialog
-
-//..
 const fs = require('fs')
-const os = require('os')
-const path = require('path')
-//..
 
 
 ipc.on('open-file-dialog', (event) => {
@@ -37,8 +32,24 @@ ipc.on('save-dialog', (event) => {
 })
 
 let lastWorkerWindow = null
+let lastPDFPath = null
 
-ipc.on('print-to-pdf', (event, filePath) => {
+ipc.on('print-to-pdf', (event, arg) => {
+  const options = {
+    title: 'Export',
+    filters: [
+      {
+        name: 'PDF file',
+        extensions: ['.pdf']
+      }
+    ]
+  }
+  
+  const pdfPath = dialog.showSaveDialogSync(options);
+  if( pdfPath == null ) {
+    return
+  }
+  
   if (lastWorkerWindow !== null) {
     // エラーにより前回のページが残っていた場合の対処
     lastWorkerWindow.close()
@@ -59,14 +70,14 @@ ipc.on('print-to-pdf', (event, filePath) => {
   })
 
   workerWin.on('ready-to-show', () => {
-    workerWin.send('print-to-pdf', filePath)
+    workerWin.send('print-to-pdf', arg)
   })
 
   lastWorkerWindow = workerWin
+  lastPDFPath = pdfPath
 })
 
 ipc.on('ready-print-to-pdf', (event, dims) => {
-  const pdfPath = path.join(os.tmpdir(), 'out.pdf')
   const win = BrowserWindow.fromWebContents(event.sender)
 
   console.log('dims: w=' + dims.width + ' h=' + dims.height)
@@ -81,12 +92,12 @@ ipc.on('ready-print-to-pdf', (event, dims) => {
   }
 
   win.webContents.printToPDF(options).then(data => {
-    fs.writeFile(pdfPath, data, (err) => {
+    fs.writeFile(lastPDFPath, data, (err) => {
       if( err ) {
         throw err
       }
     })
-    shell.openExternal('file://' + pdfPath)
+    shell.openExternal('file://' + lastPDFPath)
     win.close()
   })
 })
