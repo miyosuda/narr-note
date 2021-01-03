@@ -22,7 +22,8 @@
       "assets",
       "src",
       "package.json",
-      "package-lock.json"
+      "package-lock.json",
+      "build/icon.*"
     ],
     "mac": {
       "target": [
