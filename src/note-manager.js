@@ -230,8 +230,23 @@ class NoteManager {
     if( pickNodeCandidates.length > 0 ) {
       // マウスが乗った物を面積の小さい物順にソート
       pickNodeCandidates.sort((node0, node1) => {
-        // 面積が小さい方を優先
-        return node0.areaSize() - node1.areaSize()
+        const areaDiff = node0.areaSize() - node1.areaSize()
+        if( areaDiff != 0 ) {
+          // 面積が小さい方を優先
+          return areaDiff
+        } else {
+          // 面積が同じならselectedの方を優先
+          const selected0 = node0.isSelected()
+          const selected1 = node1.isSelected()
+          if( selected0 != selected1 ) {
+            if( selected0 ) {
+              return -1.0
+            } else {
+              return 1.0
+            }
+            return 0.0
+          }
+        }
       })
       // マウスが乗った物のうち、一番面積が小さかった物
       pickNode = pickNodeCandidates[0]
