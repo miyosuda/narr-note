@@ -56,7 +56,7 @@ Colors of the **rectangle** and **line** are specfied with color code.
 
 #### Example
 
-````
+```
 [r]
 
 {g}
