@@ -118,12 +118,16 @@ class NoteManager {
     this.updatePageLabel()
   }
 
-  showInput(asSibling) {
+  showInputAt(x, y) {
     this.clearSelection()
-    
+    const data = new NodeData(x, y, "")
+    this.textInput.show(data)
+  }
+
+  showInput(asSibling) {
     let x = 10
     let y = 10
-
+    
     if(this.lastNode != null) {
       if(asSibling) {
         x = this.lastNode.right + 30
@@ -148,8 +152,7 @@ class NoteManager {
       y = limitY
     }
     
-    const data = new NodeData(x, y, "")
-    this.textInput.show(data)
+    this.showInputAt(x, y)
   }
 
   forceSetLastNode() {
@@ -256,16 +259,21 @@ class NoteManager {
   }
 
   onMouseDown(e) {
+    if(e.which == 3) {
+      // 右クリックの場合
+      return
+    }
+    
     if( this.textInput.isShown() ) {
       // textInput表示中なら何もしない
       return
     }
     
-    this.nodeEditied = false
-    
     const pos = this.getLocalPos(e)
     const x = pos.x
     const y = pos.y
+    
+    this.nodeEditied = false
 
     // Anchorの上のクリックかどうか
     for(let i=0; i<this.nodes.length; i++) {
@@ -275,7 +283,7 @@ class NoteManager {
         this.selectedAnchor = anchor
         break
       }
-    }
+    }   
 
     if( this.selectedAnchor != null ) {
       // Anchor上のクリックだった場合
@@ -384,6 +392,15 @@ class NoteManager {
   }
 
   onMouseUp(e) {
+    if(e.which == 3) {
+      // 右クリックの場合
+      const pos = this.getLocalPos(e)
+      const x = pos.x
+      const y = pos.y
+      this.showInputAt(x, y)
+      return
+    }
+    
     this.isDragging = false
 
     if( this.areaSelection.isShown() ) {
@@ -408,10 +425,16 @@ class NoteManager {
   }
 
   onMouseMove(e) {
+    if(e.which == 3) {
+      // 右クリックの場合
+      return
+    }
+    
     if(this.isDragging == true) {
       const pos = this.getLocalPos(e)
       const x = pos.x
       const y = pos.y
+      
       const dx = x - this.dragStartX
       const dy = y - this.dragStartY
 
@@ -524,8 +547,11 @@ class NoteManager {
   }
 
   onResize() {
-    this.svg.setAttribute('width', window.innerWidth)
-    this.svg.setAttribute('height', window.innerHeight)
+    // なぜかmarginをつけないとスクロールバーが出てしまう
+    const margin = 2
+    
+    this.svg.setAttribute('width', window.innerWidth - margin)
+    this.svg.setAttribute('height', window.innerHeight - margin)
   }
 
   getLocalPos(e) {
