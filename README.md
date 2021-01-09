@@ -4,6 +4,8 @@ Fast math note taking tool with Tex notation for MacOSX.
 
 All of the text/math/rect/line fragments are written with markdown notation, but can be freely layed out graphically.
 
+
+
 ## Grammar
 
 ### Text
@@ -19,12 +21,14 @@ All of the text/math/rect/line fragments are written with markdown notation, but
 | #####  | H5 |
 
 
+
 ### Rectangle
 
 | input | type           |
 | ---- | ----            |
 | []   | Rectangle       |
 | {}   | Round rectangle |
+
 
 
 ### Line/Arrow
@@ -37,6 +41,16 @@ All of the text/math/rect/line fragments are written with markdown notation, but
 | -->    | Arrow          |
 | <->    | Arrow          |
 | <- -   | Dashed arrow   |
+
+
+
+###  Image
+```
+!(relative/path/to/image.png)
+
+!(/absolute/path/to/image.png)
+```
+
 
 
 ### Color
@@ -65,6 +79,7 @@ Colors of the **rectangle** and **line** are specfied with color code.
 ```
 
 
+
 ## Development
 
 ### Initial setup
@@ -73,16 +88,21 @@ Colors of the **rectangle** and **line** are specfied with color code.
 $ npm install
 ```
 
+
+
 ### Debug
 
 ```
 $ npm start
 ```
 
+
+
 ### Build
 
-### MacOSX
+#### MacOSX
 
 ```
 $ node_modules/.bin/electron-builder --mac --x64
 ```
+
