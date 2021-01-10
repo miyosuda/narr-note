@@ -807,12 +807,6 @@ class NoteManager {
     this.setDirty(false)
   }
 
-  /*
-  load() {
-    ipc.send('open-file-dialog')
-  }
-  */
-
   loadSub(path) {
     fs.readFile(path, (error, json) => {
       if(error != null) {

@@ -32,19 +32,19 @@ const showSaveConfirmDialog = () => {
 
 let onSavedFunction = null
 
+const saveOptions = {
+  title: 'Save',
+  filters: [
+    {
+      name: 'Data',
+      extensions: ['.json']
+    }
+  ]
+}
+
 const save = (browserWindow, onSavedHook=null) => {
   if( filePath == null ) {
-    const options = {
-      title: 'Save',
-      filters: [
-        {
-          name: 'Data',
-          extensions: ['.json']
-        }
-      ]
-    }
-    
-    const path = dialog.showSaveDialogSync(options)
+    const path = dialog.showSaveDialogSync(saveOptions)
     if( path != null ) {
       onSavedFunction = onSavedHook
       browserWindow.webContents.send('selected-save-file', path)
@@ -56,6 +56,15 @@ const save = (browserWindow, onSavedHook=null) => {
     browserWindow.webContents.send(
       'request', 'save'
     )
+  }
+}
+
+const saveAs = (browserWindow) => {
+  const path = dialog.showSaveDialogSync(saveOptions)
+  if( path != null ) {
+    browserWindow.webContents.send('selected-save-file', path)
+    // filePathの設定
+    filePath = path
   }
 }
 
@@ -297,6 +306,13 @@ const templateMenu = [
           save(browserWindow)
         }
       },
+      {
+        label: 'Save As',
+        accelerator: 'CmdOrCtrl+Shift+S',
+        click: (menuItem, browserWindow, event) => {
+          saveAs(browserWindow)
+        }
+      },      
       {
         label: 'Export PDF',
         accelerator: 'CmdOrCtrl+E',
