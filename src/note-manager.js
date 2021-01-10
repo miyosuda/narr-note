@@ -56,6 +56,8 @@ class NoteManager {
     this.editHistory = new EditHistory()
     this.lastNode = null
     this.copiedNodeDatas = []
+
+    this.setDirty(false)
   }
 
   prepare() {
@@ -79,21 +81,21 @@ class NoteManager {
 
     this.filePath = null
 
-    ipc.on('selected-file', (event, path) => {
+    ipc.on('selected-load-file', (event, path) => {
       if(path) {
         this.loadSub(path)
       }
     })
 
-    ipc.on('saved-file', (event, path) => {
+    ipc.on('selected-save-file', (event, path) => {
       if(path) {
         this.saveSub(path)
       }
     })
 
     ipc.on('request', (event, arg) => {
-      if( arg == 'open-file' ) {
-        this.load()
+      if( arg == 'new-file' ) {
+        this.newFile()
       } else if( arg == 'save' ) {
         this.save()
       } else if( arg == 'duplicate' ) {
@@ -116,6 +118,10 @@ class NoteManager {
     })
 
     this.updatePageLabel()
+  }
+
+  setDirty(dirty) {
+    ipc.send('set-dirty', dirty)
   }
 
   showInputAt(x, y) {
@@ -741,6 +747,7 @@ class NoteManager {
 
   storeState() {
     this.editHistory.addHistory(this.noteData)
+    this.setDirty(true)
   }
 
   applyNoteData(noteData) {
@@ -764,13 +771,16 @@ class NoteManager {
     })
     
     this.filePath = path
+    this.setDirty(false)
+
+    ipc.send('save-finished')
   }
 
   save() {
-    if( this.filePath == null ) {
-      ipc.send('save-dialog')
-    } else {
+    if( this.filePath != null ) {
       this.saveSub(this.filePath)
+    } else {
+      // TODO: 無いパターン
     }
   }
 
@@ -783,9 +793,25 @@ class NoteManager {
     ipc.send('print-to-pdf', arg)
   }
 
+  newFile() {
+    // TODO: loadSub()と共通化
+    const noteData = new NoteData()
+    this.clearAllNodes()
+    this.init()
+    this.applyNoteData(noteData)
+    this.storeState()
+    this.updatePageLabel()
+
+    this.filePath = null
+
+    this.setDirty(false)
+  }
+
+  /*
   load() {
     ipc.send('open-file-dialog')
   }
+  */
 
   loadSub(path) {
     fs.readFile(path, (error, json) => {
@@ -796,14 +822,17 @@ class NoteManager {
       if(json != null) {
         const noteData = new NoteData()
         noteData.fromJson(json)
+        // TODO: newFile()と共通化
         this.clearAllNodes()
         this.init()
         this.applyNoteData(noteData)
         this.storeState()
         this.updatePageLabel()
+        
+        this.filePath = path
+        this.setDirty(false)
       }
     })
-    this.filePath = path
   }
 
   moveNextPage() {

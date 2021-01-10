@@ -4,32 +4,73 @@ const dialog = require('electron').dialog
 const fs = require('fs')
 
 
-ipc.on('open-file-dialog', (event) => {
-  const options = {
-    properties: ['openFile']
-  }
-  const pathes = dialog.showOpenDialogSync(options)
-  if(pathes != null && pathes.length > 0) {
-    event.sender.send('selected-file', pathes[0])
-  }
+CONFIRM_ANSWER_SAVE   = 0
+CONFIRM_ANSWER_DELETE = 1
+CONFIRM_ANSWER_CANCEL = 2
+
+
+let editDirty = false
+let filePath = null
+
+
+ipc.on('set-dirty', (event, dirty) => {
+  editDirty = dirty
 })
 
-ipc.on('save-dialog', (event) => {
+
+const showSaveConfirmDialog = () => {
   const options = {
-    title: 'Save',
-    filters: [
-      {
-        name: 'Data',
-        extensions: ['.json']
-      }
-    ]
+    type: 'info',
+    buttons: ['Save', 'Delete', 'Cancel'],
+    message: 'File not saved. Save?',
   }
   
-  const path = dialog.showSaveDialogSync(options);
-  if( path != null ) {
-    event.sender.send('saved-file', path)
+  const ret = dialog.showMessageBoxSync(options)
+  console.log("ret=" + ret)
+  return ret
+}
+
+let onSavedFunction = null
+
+const save = (browserWindow, onSavedHook=null) => {
+  if( filePath == null ) {
+    const options = {
+      title: 'Save',
+      filters: [
+        {
+          name: 'Data',
+          extensions: ['.json']
+        }
+      ]
+    }
+    
+    const path = dialog.showSaveDialogSync(options)
+    if( path != null ) {
+      onSavedFunction = onSavedHook
+      browserWindow.webContents.send('selected-save-file', path)
+      // filePathの設定
+      filePath = path
+    }
+  } else {
+    onSavedFunction = onSavedHook
+    browserWindow.webContents.send(
+      'request', 'save'
+    )
   }
+}
+
+
+const onSaveFinished = () => {
+  if( onSavedFunction != null ) {
+    onSavedFunction()
+  }
+}
+
+
+ipc.on('save-finished', (event) => {
+  onSaveFinished()
 })
+
 
 let lastWorkerWindow = null
 let lastPDFPath = null
@@ -45,7 +86,7 @@ ipc.on('print-to-pdf', (event, arg) => {
     ]
   }
   
-  const pdfPath = dialog.showSaveDialogSync(options);
+  const pdfPath = dialog.showSaveDialogSync(options)
   if( pdfPath == null ) {
     return
   }
@@ -110,6 +151,25 @@ const createWindow = () => {
     }
   })
 
+  win.on('close', (event) => {
+    if( editDirty ) {
+      const quit = () => {
+        app.quit()
+      }
+      
+      const ret = showSaveConfirmDialog()
+      if( ret == CONFIRM_ANSWER_SAVE ) {
+        // save後にquitを実行する
+        event.preventDefault()
+        save(win, quit)
+      } else if( ret == CONFIRM_ANSWER_DELETE ) {
+        editDirty = false
+      } else {
+        event.preventDefault()
+      }
+    }
+  })
+
   win.loadURL('file://' + __dirname + '/index.html')
   //win.webContents.openDevTools()
 }
@@ -117,9 +177,12 @@ const createWindow = () => {
 app.whenReady().then(createWindow)
 
 app.on('window-all-closed', () => {
+  app.quit()
+  /*
   if (process.platform !== 'darwin') {
     app.quit()
   }
+  */
 })
 
 app.on('activate', () => {
@@ -142,19 +205,86 @@ const templateMenu = [
       { role: 'hideothers' },
       { role: 'unhide' },
       { type: 'separator' },
-      { role: 'quit' }
+      {
+        label: 'Quit',
+        accelerator: 'CmdOrCtrl+Q',
+        click: (menuItem, browserWindow, event) => {
+          const quit = () => {
+            app.quit()
+          }
+          
+          if( editDirty ) {
+            const ret = showSaveConfirmDialog()
+            if( ret == CONFIRM_ANSWER_SAVE ) {
+              // save後にquitを実行する
+              save(browserWindow, quit)
+            } else if( ret == CONFIRM_ANSWER_DELETE ) {
+              editDirty = false
+              quit()
+            }
+          } else {
+            quit()
+          }
+        },
+      },      
     ]
   },
   {
     label: 'File',
     submenu: [
       {
+        label: 'New',
+        accelerator: 'CmdOrCtrl+N',
+        click: (menuItem, browserWindow, event) => {
+          const requestNewFile = () => {
+            browserWindow.webContents.send(
+              'request', 'new-file'
+            )
+            // filePathの設定
+            filePath = null
+          }
+          
+          if( editDirty ) {
+            const ret = showSaveConfirmDialog()
+            if( ret == CONFIRM_ANSWER_SAVE ) {
+              // save後にnew fileを実行する
+              save(browserWindow, requestNewFile)
+            } else if( ret == CONFIRM_ANSWER_DELETE ) {
+              requestNewFile()
+            }
+          } else {
+            requestNewFile()
+          }
+        },
+      },
+      {
         label: 'Open',
         accelerator: 'CmdOrCtrl+O',
         click: (menuItem, browserWindow, event) => {
-          browserWindow.webContents.send(
-            'request', 'open-file'
-          )
+          const requestOpen = () => {
+            const options = {
+              properties: ['openFile']
+            }
+            const pathes = dialog.showOpenDialogSync(options)
+            if(pathes != null && pathes.length > 0) {
+              const path = pathes[0]
+              browserWindow.webContents.send('selected-load-file', path)
+              // filePathの設定
+              filePath = path
+            }
+          }
+          
+          if( editDirty ) {
+            const ret = showSaveConfirmDialog()
+            if( ret == CONFIRM_ANSWER_SAVE ) {
+              // save後にopenする
+              save(browserWindow, requestOpen)
+            } else if( ret == CONFIRM_ANSWER_DELETE ) {
+              requestOpen()
+            }
+          } else {
+            requestOpen()
+          }
         },
       },
       {
@@ -164,9 +294,7 @@ const templateMenu = [
         label: 'Save',
         accelerator: 'CmdOrCtrl+S',
         click: (menuItem, browserWindow, event) => {
-          browserWindow.webContents.send(
-            'request', 'save'
-          )
+          save(browserWindow)
         }
       },
       {
@@ -177,7 +305,7 @@ const templateMenu = [
             'request', 'export-pdf'
           )
         }
-      },      
+      },
       {
         role: 'close'
       },
