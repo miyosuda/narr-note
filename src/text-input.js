@@ -107,6 +107,8 @@ class TextInput {
   show(data) {
     this.data = data
     this.input.value = this.data.text
+
+    this.textOnShown = this.data.text
     
     this.updateInputSize()
 
@@ -161,7 +163,8 @@ class TextInput {
     
     // テキスト入力が完了した
     this.data.setText(value)
-    this.noteManager.onTextDecided(this.data)
+    const textChanged = this.textOnShown != value
+    this.noteManager.onTextDecided(this.data, textChanged)
     this.hide()
   }
 

@@ -19,7 +19,7 @@ class EditHistory {
     
     this.history.push(clonedNoteData)
     this.cursor += 1
-    if( this.history.length > EDIT_HISTORY_MAX ) {
+    if( this.history.length > EDIT_HISTORY_MAX ) {      
       this.history.shift()
       this.cursor -= 1
     }
@@ -28,7 +28,7 @@ class EditHistory {
   undo() {
     if( this.cursor > 0 ) {
       this.cursor -= 1
-      return this.history[this.cursor]
+      return this.history[this.cursor].clone()
     } else {
       return null
     }
@@ -37,7 +37,7 @@ class EditHistory {
   redo() {
     if( this.cursor < this.history.length-1 ) {
       this.cursor += 1
-      return this.history[this.cursor]
+      return this.history[this.cursor].clone()
     } else {
       return null
     }

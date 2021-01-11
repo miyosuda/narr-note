@@ -503,8 +503,10 @@ class NoteManager {
       this.textInput.show(pickNode.data)
       // ノードを削除
       this.removeNode(pickNode)
+      // ここではundoバッファに反映しない
+      
       // undoバッファ対応
-      this.storeState()
+      //this.storeState()
     }
   }
   
@@ -523,11 +525,11 @@ class NoteManager {
       const data = new NodeData(x, y, "")
       const text = '!(' + relativePath + ')'
       data.setText(text)
-      this.onTextDecided(data)
+      this.onTextDecided(data, true)
     }
   }
   
-  onTextDecided(data) {
+  onTextDecided(data, changed=true) {
     // テキストが空文字ならばノードを追加しない
     if( data.text != "" ) {
       // TODO: 要refactor
@@ -547,6 +549,14 @@ class NoteManager {
       } else {
         this.addNode(data)
         // undoバッファ対応
+        if( changed ) {
+          this.storeState()
+        }
+      }
+    } else {
+      // 空文字だった場合
+      if( changed ) {
+        // 文字列が削除された場合
         this.storeState()
       }
     }
