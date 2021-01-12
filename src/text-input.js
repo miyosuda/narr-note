@@ -104,7 +104,7 @@ class TextInput {
     this.hide()
   }
 
-  show(data) {
+  show(data, initialCaretPos=0) {
     this.data = data
     this.input.value = this.data.text
 
@@ -120,6 +120,9 @@ class TextInput {
     this.updateOuterSize()
     
     this.input.focus()
+    if( initialCaretPos != 0 ) {
+      this.input.setSelectionRange(initialCaretPos, initialCaretPos)
+    }
     
     this.textChanged = false
     this.shown = true

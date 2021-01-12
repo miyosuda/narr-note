@@ -124,13 +124,19 @@ class NoteManager {
     ipc.send('set-dirty', dirty)
   }
 
-  showInputAt(x, y) {
+  showInputAt(x, y, displayMath=false) {
     this.clearSelection()
-    const data = new NodeData(x, y, "")
-    this.textInput.show(data)
+    let initialText = ""
+    let initialCaretPos = 0
+    if( displayMath ) {
+      initialText = "$$\n\n$$"
+      initialCaretPos = 3
+    }
+    const data = new NodeData(x, y, initialText)
+    this.textInput.show(data, initialCaretPos)
   }
 
-  showInput(asSibling) {
+  showInput(asSibling, displayMath=false) {
     let x = 10
     let y = 10
     
@@ -157,8 +163,8 @@ class NoteManager {
     if( y > limitY ) {
       y = limitY
     }
-    
-    this.showInputAt(x, y)
+
+    this.showInputAt(x, y, displayMath)
   }
 
   forceSetLastNode() {
@@ -208,10 +214,12 @@ class NoteManager {
     }
 
     if(e.key === 'Tab' ) {
-      this.showInput(true)
+      const displayMath = e.ctrlKey
+      this.showInput(true, displayMath)
       e.preventDefault()
     } else if(e.key === 'Enter' ) {
-      this.showInput(false)
+      const displayMath = e.ctrlKey
+      this.showInput(false, displayMath)
       e.preventDefault()
     } else if(e.key === 'Backspace' ) {
       this.deleteSelectedNodes()
@@ -403,7 +411,8 @@ class NoteManager {
       const pos = this.getLocalPos(e)
       const x = pos.x
       const y = pos.y
-      this.showInputAt(x, y)
+      const displayMath = e.ctrlKey
+      this.showInputAt(x, y, displayMath)
       return
     }
     
