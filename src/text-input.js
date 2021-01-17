@@ -1,5 +1,24 @@
 const {getElementDimension, renderMathOnPos} = require('./text-utils')
 
+const KEY_ENTER = 13
+const KEY_SHIFT = 16
+
+const KEY_0 = 48
+const KEY_9 = 57
+
+// ショートカット設定
+const shortCutSetting = {
+  1 : {
+    text : "\\mathbf{}",
+    pos: 8,
+  },
+  2 : {
+    text : "\\frac{}{}",
+    pos: 6,
+  },  
+}
+
+
 // 全角を2文字としてカウントする文字列カウント
 const getStringLength = (str) => {
   if( str == null ) {
@@ -69,13 +88,19 @@ class TextInput {
 
     input.addEventListener('keydown', (event) => {
       const key = event.keyCode || event.charCode || 0
-      
-      if(key == 13) {
+
+      if( event.ctrlKey && KEY_0 <= key && key <= KEY_9 ) {
+        // ショートカット対応
+        const shortCutId = key - KEY_0
+        this.processShortCut(shortCutId)
+      }
+
+      if(key == KEY_ENTER) { // Enter key
         if(!this.shiftOn) {
           // シフトキーが押されていなかった場合、入力決定とする
           this.onTextChange(input.value)
         }
-      } else if(key == 16) {
+      } else if(key == KEY_SHIFT) { // Shift key
         // shiftキー押下
         this.shiftOn = true
       }
@@ -84,7 +109,7 @@ class TextInput {
     input.addEventListener('keyup', (event) => {
       const key = event.keyCode || event.charCode || 0
       
-      if(key == 16) {
+      if(key == KEY_SHIFT) {
         // shiftキー離した
         this.shiftOn = false
       }
@@ -200,6 +225,24 @@ class TextInput {
 
   isShown() {
     return this.shown
+  }
+
+  processShortCut(shortCutId) {    
+    const caretPos = this.input.selectionStart
+
+    if( shortCutSetting[shortCutId] ) {
+      const insertingText = shortCutSetting[shortCutId].text
+      const insertCaretPos = shortCutSetting[shortCutId].pos
+      
+      const text = this.input.value
+      const textPre = text.slice(0, caretPos)
+      const textPost = text.slice(caretPos)
+      
+      this.input.value = textPre + insertingText + textPost
+      this.input.setSelectionRange(caretPos+insertCaretPos, caretPos+insertCaretPos)
+      
+      this.onTextInput()
+    }
   }
 }
 
