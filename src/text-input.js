@@ -8,14 +8,22 @@ const KEY_9 = 57
 
 // ショートカット設定
 const shortCutSetting = {
-  1 : {
+  "i" : {
+    text : "\\",
+    pos: 1,
+  },  
+  "1" : {
     text : "\\mathbf{}",
     pos: 8,
   },
-  2 : {
+  "2" : {
     text : "\\frac{}{}",
     pos: 6,
-  },  
+  },
+  "3" : {
+    text : "{}",
+    pos: 1,
+  },
 }
 
 
@@ -89,10 +97,13 @@ class TextInput {
     input.addEventListener('keydown', (event) => {
       const key = event.keyCode || event.charCode || 0
 
-      if( event.ctrlKey && KEY_0 <= key && key <= KEY_9 ) {
+      console.log("key=" + event.key)
+      console.log("keyCode=" + event.keyCode)
+      console.log("charCoe=" + event.charCoe)
+
+      if( event.ctrlKey && shortCutSetting[event.key] ) {
         // ショートカット対応
-        const shortCutId = key - KEY_0
-        this.processShortCut(shortCutId)
+        this.processShortCut(shortCutSetting[event.key])
       }
 
       if(key == KEY_ENTER) { // Enter key
@@ -227,22 +238,20 @@ class TextInput {
     return this.shown
   }
 
-  processShortCut(shortCutId) {    
+  processShortCut(shortCut) {
     const caretPos = this.input.selectionStart
-
-    if( shortCutSetting[shortCutId] ) {
-      const insertingText = shortCutSetting[shortCutId].text
-      const insertCaretPos = shortCutSetting[shortCutId].pos
+    
+    const insertingText = shortCut.text
+    const insertCaretPos = shortCut.pos
       
-      const text = this.input.value
-      const textPre = text.slice(0, caretPos)
-      const textPost = text.slice(caretPos)
+    const text = this.input.value
+    const textPre = text.slice(0, caretPos)
+    const textPost = text.slice(caretPos)
       
-      this.input.value = textPre + insertingText + textPost
-      this.input.setSelectionRange(caretPos+insertCaretPos, caretPos+insertCaretPos)
+    this.input.value = textPre + insertingText + textPost
+    this.input.setSelectionRange(caretPos+insertCaretPos, caretPos+insertCaretPos)
       
-      this.onTextInput()
-    }
+    this.onTextInput()
   }
 }
 
