@@ -3,26 +3,31 @@ const {getElementDimension, renderMathOnPos} = require('./text-utils')
 const KEY_ENTER = 13
 const KEY_SHIFT = 16
 
-const KEY_0 = 48
-const KEY_9 = 57
-
 // ショートカット設定
 const shortCutSetting = {
-  "i" : {
-    text : "\\",
+  'i' : {
+    text : '\\',
     pos: 1,
-  },  
-  "1" : {
-    text : "\\mathbf{}",
+  },
+  '1' : {
+    text : '\\mathbf{}',
     pos: 8,
   },
-  "2" : {
-    text : "\\frac{}{}",
+  '2' : {
+    text : '\\frac{}{}',
     pos: 6,
   },
-  "3" : {
-    text : "{}",
+  '3' : {
+    text : '{}',
     pos: 1,
+  },
+  '4' : {
+    text : '\\partial ',
+    pos: 9,
+  },
+  '5' : {
+    text : '\\left(  \\right)',
+    pos: 7,
   },
 }
 
@@ -97,11 +102,7 @@ class TextInput {
     input.addEventListener('keydown', (event) => {
       const key = event.keyCode || event.charCode || 0
 
-      console.log("key=" + event.key)
-      console.log("keyCode=" + event.keyCode)
-      console.log("charCoe=" + event.charCoe)
-
-      if( event.ctrlKey && shortCutSetting[event.key] ) {
+      if( (event.ctrlKey || event.metaKey) && shortCutSetting[event.key] ) {
         // ショートカット対応
         this.processShortCut(shortCutSetting[event.key])
       }
