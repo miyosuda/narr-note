@@ -1,35 +1,43 @@
 const {getElementDimension, renderMathOnPos} = require('./text-utils')
+const Mousetrap = require('mousetrap');
 
 const KEY_ENTER = 13
 const KEY_SHIFT = 16
 
 // ショートカット設定
-const shortCutSetting = {
-  'i' : {
+const shortCutSettings = [
+  {
+    keys: ['i', 'i'],
     text : '\\',
     pos: 1,
   },
-  '1' : {
+  {
+    keys: ['i', 'b'],
     text : '\\mathbf{}',
     pos: 8,
   },
-  '2' : {
+  {
+    keys: ['i', 'f'],
     text : '\\frac{}{}',
     pos: 6,
   },
-  '3' : {
+  {
+    keys: ['i', 'p'],
+    text : '\\partial ',
+    pos: 9,
+  },  
+  {
+    keys: ['1'],
     text : '{}',
     pos: 1,
   },
-  '4' : {
-    text : '\\partial ',
-    pos: 9,
-  },
-  '5' : {
+
+  {
+    keys: ['2'],
     text : '\\left(  \\right)',
     pos: 7,
   },
-}
+]
 
 
 // 全角を2文字としてカウントする文字列カウント
@@ -98,15 +106,32 @@ class TextInput {
     input.addEventListener('blur', (event) => {
       this.onTextChange(input.value)
     })
-
+    
+    // ショートカット設定
+    for(let i=0; i<shortCutSettings.length; i++) {
+      const shortCutSetting = shortCutSettings[i]
+      
+      let key0 = ''
+      let key1 = ''
+      
+      for(let j=0; j<shortCutSetting.keys.length; j++) {
+        if( j != 0 ) {
+          key0 += ' '
+          key1 += ' '
+        }
+        
+        key0 += 'command+' + shortCutSetting.keys[j]
+        key1 += 'ctrl+' + shortCutSetting.keys[j]
+      }
+      Mousetrap.bind([key0, key1], () => {
+        this.processShortCut(shortCutSetting)
+        return false
+      })      
+    }
+    
     input.addEventListener('keydown', (event) => {
       const key = event.keyCode || event.charCode || 0
-
-      if( (event.ctrlKey || event.metaKey) && shortCutSetting[event.key] ) {
-        // ショートカット対応
-        this.processShortCut(shortCutSetting[event.key])
-      }
-
+      
       if(key == KEY_ENTER) { // Enter key
         if(!this.shiftOn) {
           // シフトキーが押されていなかった場合、入力決定とする
@@ -239,11 +264,15 @@ class TextInput {
     return this.shown
   }
 
-  processShortCut(shortCut) {
+  processShortCut(shortCutSetting) {
+    if( !this.shown ) {
+      return
+    }
+    
     const caretPos = this.input.selectionStart
     
-    const insertingText = shortCut.text
-    const insertCaretPos = shortCut.pos
+    const insertingText = shortCutSetting.text
+    const insertCaretPos = shortCutSetting.pos
       
     const text = this.input.value
     const textPre = text.slice(0, caretPos)
