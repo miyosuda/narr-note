@@ -7,34 +7,43 @@ const KEY_SHIFT = 16
 // ショートカット設定
 const shortCutSettings = [
   {
-    keys: ['i', 'i'],
+    key: 'ctrl+i ctrl+i',
+    text : '$$',
+    pos: 1,
+  },  
+  {
+    key: 'ctrl+m',
     text : '\\',
     pos: 1,
   },
   {
-    keys: ['i', 'b'],
+    key: 'ctrl+i ctrl+b',
     text : '\\mathbf{}',
     pos: 8,
   },
   {
-    keys: ['i', 'f'],
+    key: 'ctrl+i ctrl+f',
     text : '\\frac{}{}',
     pos: 6,
   },
   {
-    keys: ['i', 'p'],
+    key: 'ctrl+i ctrl+p',
     text : '\\partial ',
     pos: 9,
-  },  
-  {
-    keys: ['1'],
-    text : '{}',
-    pos: 1,
   },
-
   {
-    keys: ['2'],
+    key: 'command+1',
     text : '\\left(  \\right)',
+    pos: 7,
+  },
+  {
+    key: 'command+2',
+    text : '\\left\\{  \\right\\}',
+    pos: 8,
+  },
+  {
+    key: 'command+3',
+    text : '\\left[  \\right]',
     pos: 7,
   },
 ]
@@ -111,22 +120,10 @@ class TextInput {
     for(let i=0; i<shortCutSettings.length; i++) {
       const shortCutSetting = shortCutSettings[i]
       
-      let key0 = ''
-      let key1 = ''
-      
-      for(let j=0; j<shortCutSetting.keys.length; j++) {
-        if( j != 0 ) {
-          key0 += ' '
-          key1 += ' '
-        }
-        
-        key0 += 'command+' + shortCutSetting.keys[j]
-        key1 += 'ctrl+' + shortCutSetting.keys[j]
-      }
-      Mousetrap.bind([key0, key1], () => {
+      Mousetrap.bind(shortCutSetting.key, () => {
         this.processShortCut(shortCutSetting)
         return false
-      })      
+      })
     }
     
     input.addEventListener('keydown', (event) => {
