@@ -1,8 +1,21 @@
-# narr note
+# narr note (β)
 
 Fast math note taking tool with Tex notation for MacOSX.
 
 All of the text/math/rect/line fragments are written with markdown notation, but can be freely layed out graphically.
+
+
+
+
+## How to put texts
+
+| key          |                                              |
+| ------       | -------------                                |
+| ENTER        | add text input at the bottom of the last one |
+| TAB          | add text input at the right of the last one  |
+| ctrl+ENTER   | add display math text input                  |
+| ctrl+TAB     | add display math text input                  |
+| right click  | add text input                               |
 
 
 
@@ -51,6 +64,9 @@ All of the text/math/rect/line fragments are written with markdown notation, but
 !(/absolute/path/to/image.png)
 ```
 
+Images can be put with drag and drop.
+
+
 
 
 ### Color
@@ -67,8 +83,7 @@ Colors of the **rectangle** and **line** are specfied with color code.
 | y     | Yellow  |
 | k     | Black   |
 
-
-#### Example
+#### Color example
 
 ```
 [r]
@@ -77,6 +92,21 @@ Colors of the **rectangle** and **line** are specfied with color code.
 
 --->r
 ```
+
+
+
+## Shortcut
+
+
+| key             | text                  |
+| ----            | ----                  |
+| ctrl+i ctrl+i   | $$                    |
+| ctrl+m          | \\                    |
+| ctrl+i ctrl+b   | \\mathbf{}            |
+| ctrl+i ctrl+p   | \\partial             |
+| command+1       | \\left(  \\right)     |
+| command+2       | \\left\\{  \\right\\} |
+| command+3       | \\left[  \\right]     |
 
 
 
