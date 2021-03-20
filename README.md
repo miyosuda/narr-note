@@ -1,8 +1,8 @@
 # narr note (β)
 
-Fast math note taking tool with Tex notation for MacOSX.
+Fast math note-taking tool with Tex notation for MacOSX.
 
-All of the text/math/rect/line fragments are written with markdown notation, but can be freely layed out graphically.
+All of the text/math/rect/line fragments are written with markdown notation but can be freely laid out graphically.
 
 
 
