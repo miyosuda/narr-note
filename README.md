@@ -1,5 +1,7 @@
 # narr note (β)
 
+![screen0](./docs/screen0.gif)
+
 Fast math note-taking tool with Tex notation for MacOSX.
 
 All of the text/math/rect/line fragments are written with markdown notation but can be freely laid out graphically.
@@ -7,6 +9,7 @@ All of the text/math/rect/line fragments are written with markdown notation but 
 ## Latest binary
 
 [narr-note-0.1.0.dmg](https://github.com/miyosuda/narr-note/releases/download/v0.1.0/narr-note-0.1.0.dmg)
+
 
 
 ## How to put texts
