@@ -2,6 +2,7 @@ const { app, Menu, BrowserWindow, shell } = require('electron')
 const ipc = require('electron').ipcMain
 const dialog = require('electron').dialog
 const fs = require('fs')
+//const path = require('path')
 
 
 CONFIRM_ANSWER_SAVE   = 0
@@ -110,7 +111,10 @@ ipc.on('print-to-pdf', (event, arg) => {
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      enableRemoteModule: true,
+      contextIsolation: false,
+      //preload: path.join(__dirname, 'preload.js')
     }
   })
   workerWin.loadURL('file://' + __dirname + '/index-print.html')
@@ -156,7 +160,10 @@ const createWindow = () => {
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true
+      nodeIntegration: true,
+      enableRemoteModule: true,
+      contextIsolation: false,
+      //preload: path.join(__dirname, 'preload.js')
     }
   })
 
