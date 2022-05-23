@@ -1,23 +1,17 @@
-const fs = require('fs')
-const ipc = require('electron').ipcRenderer
+// TODO:
+//import fs from 'fs'
+//import ipc = from 'electron'.ipcRenderer
 
-const {NODE_TYPE_NONE,
-       NODE_TYPE_TEXT,
-       NODE_TYPE_RECT,
-       NODE_TYPE_LINE,
-       NODE_TYPE_IMAGE,
-       NodeData,
-       NoteData} = require('./data')
-const {clone} = require('./utils')
-const {TextInput} = require('./text-input')
-const {Area, AreaSelection} = require('./area')
-const {EditHistory} = require('./edit-history')
-const {TextNode} = require('./node/text')
-const {RectNode} = require('./node/rect')
-const {LineNode} = require('./node/line')
-const {ImageNode} = require('./node/image')
-const {convertPathToRelative, convertPathToAbsolute} = require('./file-utils')
 
+import {NODE_TYPE_NONE, NODE_TYPE_TEXT, NODE_TYPE_RECT, NODE_TYPE_LINE, NODE_TYPE_IMAGE, NodeData, NoteData} from './data'
+import {clone} from './utils'
+import {TextInput} from './text-input'
+import {Area, AreaSelection} from './area'
+import {EditHistory} from './edit-history'
+import {TextNode} from './node/text'
+import {RectNode} from './node/rect'
+import {LineNode} from './node/line'
+import {ImageNode} from './node/image'
 
 
 const createNode = (data, parentNode, noteFilePath) => {
@@ -39,7 +33,7 @@ const DRAG_NODE = 1
 const DRAG_AREA = 2
 
 
-class NoteManager {
+export class NoteManager {
   constructor() {
     this.init()
   }
@@ -81,19 +75,19 @@ class NoteManager {
 
     this.filePath = null
 
-    ipc.on('selected-load-file', (event, path) => {
+    window.ipc.on('selected-load-file', (event, path) => {
       if(path) {
         this.loadSub(path)
       }
     })
 
-    ipc.on('selected-save-file', (event, path) => {
+    window.ipc.on('selected-save-file', (event, path) => {
       if(path) {
         this.saveSub(path)
       }
     })
 
-    ipc.on('request', (event, arg) => {
+    window.ipc.on('request', (event, arg) => {
       if( arg == 'new-file' ) {
         this.newFile()
       } else if( arg == 'save' ) {
@@ -121,7 +115,7 @@ class NoteManager {
   }
 
   setDirty(dirty) {
-    ipc.send('set-dirty', dirty)
+    window.ipc.send('set-dirty', dirty)
   }
 
   showInputAt(x, y, displayMath=false) {
@@ -783,7 +777,7 @@ class NoteManager {
 
   saveSub(path) {
     const json = this.noteData.toJson()
-    fs.writeFile(path, json, (error) => {
+    window.fs.writeFile(path, json, (error) => {
       if(error != null) {
         console.log('save error')
       }
@@ -792,7 +786,7 @@ class NoteManager {
     this.filePath = path
     this.setDirty(false)
 
-    ipc.send('save-finished')
+    window.ipc.send('save-finished')
   }
 
   save() {
@@ -809,7 +803,7 @@ class NoteManager {
       filePath: this.filePath,
       json: json,
     }
-    ipc.send('print-to-pdf', arg)
+    window.ipc.send('print-to-pdf', arg)
   }
 
   newFile() {
@@ -827,7 +821,7 @@ class NoteManager {
   }
 
   loadSub(path) {
-    fs.readFile(path, (error, json) => {
+    window.fs.readFile(path, (error, json) => {
       if(error != null) {
         console.log('file open error')
         return null
@@ -872,12 +866,12 @@ class NoteManager {
 }
 
 
-class PrintNoteManager {
+export class PrintNoteManager {
   constructor() {
   }
 
   prepare() {
-    ipc.on('print-to-pdf', (event, arg) => {
+    window.ipc.on('print-to-pdf', (event, arg) => {
       this.load(arg.json, arg.filePath)
     })
   }
@@ -928,11 +922,6 @@ class PrintNoteManager {
     dims.width = maxX
     dims.height = maxY
     
-    ipc.send("ready-print-to-pdf", dims)
+    window.ipc.send("ready-print-to-pdf", dims)
   }
-}
-
-module.exports = {
-  NoteManager,
-  PrintNoteManager,
 }

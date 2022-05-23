@@ -1,5 +1,6 @@
-const {getElementDimension, renderMathOnPos} = require('./text-utils')
-const Mousetrap = require('mousetrap');
+import {getElementDimension, renderMathOnPos} from './text-utils'
+
+import Mousetrap from 'mousetrap'
 
 const KEY_ENTER = 13
 const KEY_SHIFT = 16
@@ -88,7 +89,7 @@ const getStringLengthAndRow = (str, minSize=5) => {
 }
 
 
-class TextInput {
+export class TextInput {
   constructor(noteManager) {
     this.noteManager = noteManager
     this.foreignObject = document.getElementById('textInputObj')
@@ -280,8 +281,4 @@ class TextInput {
       
     this.onTextInput()
   }
-}
-
-module.exports = {
-  TextInput,
 }

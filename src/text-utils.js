@@ -1,8 +1,8 @@
-const katex = require('katex')
-const {parse} = require('./parse')
+import katex from 'katex'
+import {parse} from './parse'
 
 // textノードのサイズを取得
-const getElementDimension = (html, className=null) => {
+export const getElementDimension = (html, className=null) => {
   const element = document.createElement('span')
   
   // elementのsizeは子に依存
@@ -26,7 +26,7 @@ const getElementDimension = (html, className=null) => {
 }
 
 
-const render = (text, element) => {
+export const render = (text, element) => {
   const parseResult = parse(text)
   const tokens = parseResult.tokens
   
@@ -83,7 +83,7 @@ const render = (text, element) => {
 }
 
 
-const renderMathOnPos = (text, pos) => {
+export const renderMathOnPos = (text, pos) => {
   const parseResult = parse(text)
   const tokens = parseResult.tokens
   
@@ -121,11 +121,4 @@ const renderMathOnPos = (text, pos) => {
   }
 
   return null
-}
-
-
-module.exports = {
-  getElementDimension,
-  render,
-  renderMathOnPos,
 }

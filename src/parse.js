@@ -128,7 +128,7 @@ const mathDelimiters = [
 ]
 
 
-const parse = (text) => {
+export const parse = (text) => {
   const headerPattern = /^(#{1,5})([^]+)$/
   const headerMatchResult = text.match(headerPattern)
 
@@ -148,9 +148,4 @@ const parse = (text) => {
     tokens: tokens,
   }
   return parseResult
-}
-
-
-module.exports = {
-  parse,
 }

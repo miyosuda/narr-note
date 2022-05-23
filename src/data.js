@@ -1,13 +1,13 @@
-const {clone, cloneArray} = require('./utils')
+import {clone, cloneArray} from './utils'
 
-const NODE_TYPE_NONE  = 0
-const NODE_TYPE_TEXT  = 1
-const NODE_TYPE_RECT  = 2
-const NODE_TYPE_LINE  = 3
-const NODE_TYPE_IMAGE = 4
+export const NODE_TYPE_NONE  = 0
+export const NODE_TYPE_TEXT  = 1
+export const NODE_TYPE_RECT  = 2
+export const NODE_TYPE_LINE  = 3
+export const NODE_TYPE_IMAGE = 4
 
 
-class NodeData {
+export class NodeData {
   constructor(x, y, text) {
     this.type = NODE_TYPE_NONE
     this.x = x
@@ -259,7 +259,7 @@ class PageData {
 
 const DATA_VERSION = 1
 
-class NoteData {
+export class NoteData {
   constructor() {
     this.version = DATA_VERSION
     
@@ -344,15 +344,4 @@ class NoteData {
       this.pages.push(pageData)
     })
   }
-}
-
-
-module.exports = {
-  NODE_TYPE_NONE,
-  NODE_TYPE_TEXT,
-  NODE_TYPE_RECT,
-  NODE_TYPE_LINE,
-  NODE_TYPE_IMAGE,
-  NodeData,
-  NoteData,
 }

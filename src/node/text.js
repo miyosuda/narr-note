@@ -1,8 +1,8 @@
-const {Area} = require('../area')
-const {getElementDimension, render} = require('../text-utils')
+import {Area} from '../area'
+import {getElementDimension, render} from '../text-utils'
 
 
-class TextNode {
+export class TextNode {
   constructor(data, parentNode) {
     this.data = data
     
@@ -105,9 +105,4 @@ class TextNode {
     // 面積を返す
     return this.width * this.height
   }
-}
-
-
-module.exports = {
-  TextNode,
 }

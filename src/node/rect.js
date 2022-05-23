@@ -1,5 +1,5 @@
-const {Anchor} = require('../anchor')
-const {Area} = require('../area')
+import {Anchor} from '../anchor'
+import {Area} from '../area'
 
 
 const rectAnchorData = [
@@ -94,7 +94,7 @@ const rectAnchorData = [
 ]
 
 
-class RectNode {
+export class RectNode {
   constructor(data, parentNode) {
     this.data = data
     
@@ -255,9 +255,4 @@ class RectNode {
     // 面積を返す
     return this.width * this.height
   }
-}
-
-
-module.exports = {
-  RectNode,
 }

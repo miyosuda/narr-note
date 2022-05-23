@@ -1,9 +1,9 @@
-const {NoteData} = require('./data')
+import {NoteData} from './data'
 
 const EDIT_HISTORY_MAX = 10
 
 
-class EditHistory {
+export class EditHistory {
   constructor() {
     this.history = new Array()
     this.cursor = -1
@@ -42,9 +42,4 @@ class EditHistory {
       return null
     }
   }
-}
-
-
-module.exports = {
-  EditHistory,
 }

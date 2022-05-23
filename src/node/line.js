@@ -1,4 +1,4 @@
-const {Anchor} = require('../anchor')
+import {Anchor} from '../anchor'
 
 
 const calcDistanceToLineSegment = (x, y, x0, y0, x1, y1) => {
@@ -53,7 +53,7 @@ const LINE_HIT_DISTANCE = 5.0
 let nextLineId = 0
 
 
-class LineNode {
+export class LineNode {
   constructor(data, parentNode) {
     this.data = data
     
@@ -273,9 +273,4 @@ class LineNode {
     // コリジョン距離を元に面積としている
     return length * LINE_HIT_DISTANCE * 2.0
   }
-}
-
-
-module.exports = {
-  LineNode,
 }

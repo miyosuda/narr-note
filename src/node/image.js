@@ -1,6 +1,7 @@
-const {Anchor} = require('../anchor')
-const {Area} = require('../area')
-const {convertPathToAbsolute} = require('../file-utils')
+import {Anchor} from '../anchor'
+import {Area} from '../area'
+import {convertPathToAbsolute} from '../file-utils'
+
 
 const imageAnchorData = [
   // 左上
@@ -50,7 +51,7 @@ const imageAnchorData = [
 ]
 
 
-class ImageNode {
+export class ImageNode {
   constructor(data, parentNode, noteFilePath) {
     this.data = data
     
@@ -215,9 +216,4 @@ class ImageNode {
     // 面積を返す
     return this.width * this.height
   }
-}
-
-
-module.exports = {
-  ImageNode,
 }

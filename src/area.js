@@ -6,7 +6,7 @@ const checkLineSegmentLineSegmentCollision = (x0, y0, x1, y1, x2, y2, x3, y3) =>
 }
 
 
-class Area {
+export class Area {
   constructor(left, top, width, height) {
     this.left = left
     this.top = top
@@ -55,7 +55,7 @@ class Area {
 
 
 
-class AreaSelection {
+export class AreaSelection {
   constructor(noteManager) {
     this.noteManager = noteManager
     this.element = document.getElementById('areaSelection')
@@ -108,10 +108,4 @@ class AreaSelection {
   isShown() {
     return this.shown
   }
-}
-
-
-module.exports = {
-  Area,
-  AreaSelection
 }

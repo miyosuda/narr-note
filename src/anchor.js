@@ -38,7 +38,7 @@ const calcPerpendicularPoint = (sx, sy, ex, ey, px, py) => {
 }
 
 
-class Anchor {
+export class Anchor {
   constructor(node, data) {
     this.data = data
     this.node = node // ターゲットとなるNode
@@ -253,10 +253,4 @@ class Anchor {
     }
     this.node.setBottom(bottom)
   }
-}
-
-
-
-module.exports = {
-  Anchor,
 }

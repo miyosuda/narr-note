@@ -1,4 +1,4 @@
-const clone = (instance) => {
+export const clone = (instance) => {
   return Object.assign(
     Object.create(
       // Set the prototype of the new object to the prototype of the instance.
@@ -11,16 +11,10 @@ const clone = (instance) => {
 }
 
 
-const cloneArray = (array) => {
+export const cloneArray = (array) => {
   const clonedArray = []
   array.forEach(obj => {
     clonedArray.push(clone(obj))
   })
   return clonedArray
-}
-
-
-module.exports = {
-  clone,
-  cloneArray,
 }

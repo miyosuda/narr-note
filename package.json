@@ -1,35 +1,97 @@
 {
   "name": "narr-note",
-  "version": "0.1.0",
-  "main": "src/main.js",
+  "productName": "narr-note",
+  "version": "0.1.1",
+  "description": "Fast math note taking tool",
+  "main": ".webpack/main",
   "scripts": {
-    "start": "electron ."
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "echo \"No linting configured\"",
+    "inspect": "electron-forge start --inspect-electron"
   },
-  "devDependencies": {
-    "electron": "^18.2.2",
-    "electron-builder": "^22.9.1"
+  "keywords": [],
+  "author": {
+    "name": "Kosuke Miyoshi",
+    "email": "miyosuda@gmail.com"
   },
-  "dependencies": {
-    "katex": "^0.12.0",
-    "mousetrap": "^1.6.5"
-  },
-  "build": {
-    "appId": "jp.narr.narr-note",
-    "copyright": "narrative nights inc.",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "assets",
-      "src",
-      "package.json",
-      "package-lock.json",
-      "build/icon.*"
-    ],
-    "mac": {
-      "target": [
-        "dmg"
+  "license": "MIT",
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "icon": "build/icon.icns"
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "narr-note"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ],
+      "plugins": [
+        [
+          "@electron-forge/plugin-webpack",
+          {
+            "mainConfig": "./webpack.main.config.js",
+            "renderer": {
+              "config": "./webpack.renderer.config.js",
+              "entryPoints": [
+                {
+                  "html": "./src/index.html",
+                  "js": "./src/renderer.js",
+                  "name": "main_window",
+                  "preload": {
+                    "js": "./src/preload.js"
+                  }
+                },
+                {
+                  "html": "./src/index-print.html",
+                  "js": "./src/renderer-print.js",
+                  "name": "print_window",
+                  "preload": {
+                    "js": "./src/preload.js"
+                  }
+                }
+              ]
+            }
+          }
+        ]
       ]
     }
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.63",
+    "@electron-forge/maker-deb": "^6.0.0-beta.63",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.63",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.63",
+    "@electron-forge/maker-zip": "^6.0.0-beta.63",
+    "@electron-forge/plugin-webpack": "^6.0.0-beta.63",
+    "@vercel/webpack-asset-relocator-loader": "^1.7.0",
+    "css-loader": "^6.7.1",
+    "electron": "18.2.3",
+    "node-loader": "^2.0.0",
+    "style-loader": "^3.3.1"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.0",
+    "katex": "^0.15.6",
+    "mousetrap": "^1.6.5"
   }
 }

@@ -138,6 +138,6 @@ $ npm start
 #### MacOSX
 
 ```
-$ node_modules/.bin/electron-builder --mac --x64
+$ npm run make
 ```
 

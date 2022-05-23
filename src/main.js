@@ -2,7 +2,6 @@ const { app, Menu, BrowserWindow, shell } = require('electron')
 const ipc = require('electron').ipcMain
 const dialog = require('electron').dialog
 const fs = require('fs')
-//const path = require('path')
 
 
 CONFIRM_ANSWER_SAVE   = 0
@@ -95,36 +94,37 @@ ipc.on('print-to-pdf', (event, arg) => {
       }
     ]
   }
-  
+
   const pdfPath = dialog.showSaveDialogSync(options)
   if( pdfPath == null ) {
     return
   }
-  
+
   if (lastWorkerWindow !== null) {
     // エラーにより前回のページが残っていた場合の対処
     lastWorkerWindow.close()
   }
-  
+
   const workerWin = new BrowserWindow({
     show: false,
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,
       enableRemoteModule: true,
       contextIsolation: false,
-      //preload: path.join(__dirname, 'preload.js')
+      preload: PRINT_WINDOW_PRELOAD_WEBPACK_ENTRY
     }
   })
-  workerWin.loadURL('file://' + __dirname + '/index-print.html')
+
+  workerWin.loadURL(PRINT_WINDOW_WEBPACK_ENTRY)
 
   workerWin.on('closed', () => {
     lastWorkerWindow = null
   })
 
   workerWin.on('ready-to-show', () => {
-    workerWin.send('print-to-pdf', arg)
+    workerWin.webContents.send('print-to-pdf', arg)
   })
 
   lastWorkerWindow = workerWin
@@ -155,15 +155,21 @@ ipc.on('ready-print-to-pdf', (event, dims) => {
 })
 
 
+// Handle creating/removing shortcuts on Windows when installing/uninstalling.
+if (require('electron-squirrel-startup')) {
+  // eslint-disable-line global-require
+  app.quit()
+}
+
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,
       enableRemoteModule: true,
       contextIsolation: false,
-      //preload: path.join(__dirname, 'preload.js')
+      preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY
     }
   })
 
@@ -186,11 +192,11 @@ const createWindow = () => {
     }
   })
 
-  win.loadURL('file://' + __dirname + '/index.html')
+  win.loadURL(MAIN_WINDOW_WEBPACK_ENTRY)
   //win.webContents.openDevTools()
 }
 
-app.whenReady().then(createWindow)
+app.on('ready', createWindow)
 
 app.on('window-all-closed', () => {
   app.quit()
