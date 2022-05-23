@@ -19,3 +19,9 @@ jobs:
       run: npm install
     - name: build
       run: npm run make
+    - name: archive artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: out
+        path: |
+          out/make/zip
