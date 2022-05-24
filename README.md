@@ -8,7 +8,8 @@ All of the text/math/rect/line fragments are written with markdown notation but 
 
 ## Latest binary
 
-[narr-note-0.1.0.dmg](https://github.com/miyosuda/narr-note/releases/download/v0.1.0/narr-note-0.1.0.dmg)
+[narr-note-darwin-arm64-0.1.1.zip](https://github.com/miyosuda/narr-note/releases/download/v0.1.1/narr-note-darwin-arm64-0.1.1.zip)
+[narr-note-darwin-x64-0.1.1.zip](https://github.com/miyosuda/narr-note/releases/download/v0.1.1/narr-note-darwin-x64-0.1.1.zip)
 
 
 
